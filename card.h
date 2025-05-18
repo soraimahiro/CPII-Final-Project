@@ -1,0 +1,32 @@
+#ifndef CARD_H
+#define CARD_H
+
+#include <stddef.h>
+#include <stdint.h>
+#include "card_id.h"
+
+typedef enum {
+    TYPE_ATTACK,
+    TYPE_DEFENSE,
+    TYPE_MOVE,
+    TYPE_SPECIAL,
+    TYPE_METAMORPH,
+} CardType;
+
+typedef struct {
+    CardID id;
+    const char* name;
+    CardType type;
+    uint8_t level; // 0 for special
+    uint8_t cost;
+    uint8_t range;
+    uint8_t damage;
+    uint8_t defense;
+    const char* description;
+    uint8_t characterBound; // 255 for universal
+} Card;
+
+const Card* getCardData(CardID id);
+
+#endif
+

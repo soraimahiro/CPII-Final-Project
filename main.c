@@ -14,7 +14,17 @@ int main() {
     get_init_info(&mode);
     pGame->playerMode = mode;
 
+    pGame->players[0].character = 0;
+
     init_game(pGame);
+
+    player* pPlayer = malloc(sizeof(player));
+    int8_t character = pGame->players[0].character;
+    init_character(pPlayer);
+    switch (character) {
+        case 0:
+                init_red_hood(pPlayer);
+    }
 
 
 }
