@@ -23,6 +23,14 @@ void popbackVector(vector* vec) {
     vec->array[vec->SIZE] = 0;
 }
 
+int getVectorTop(vector* vec, int32_t* value){
+    if (vec == NULL || vec->SIZE == 0) {
+        return -1;
+    }
+    *value = vec->array[vec->SIZE - 1];
+    return 0;
+}
+
 void clearVector(vector* vec) {
     if (vec == NULL) {
         return;

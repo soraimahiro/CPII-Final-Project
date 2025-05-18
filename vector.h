@@ -15,6 +15,7 @@ typedef struct _vector {
 vector initVector();
 void pushbackVector(vector* vec, int32_t val);
 void popbackVector(vector* vec);
+int getVectorTop(vector* vec, int32_t* value);
 void clearVector(vector* vec);
 void eraseVector(vector* vec, int index);
 #endif
