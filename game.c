@@ -1,10 +1,14 @@
 #include "game.h"
+#include "ui.h"
 #include "card_id.h"
 
 void init_game(game* pGame) {
+    int8_t mode;
+    get_init_info(&mode);
+    pGame->playerMode = mode;
+
     pGame->now_turn_player_id = 0;
 
-    
 }
 
 void init_character(player* p){

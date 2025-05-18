@@ -11,18 +11,11 @@ int main() {
         exit(1);
     }
 
-    int8_t mode;
-    get_init_info(&mode);
-    pGame->playerMode = mode;
-
-    //pGame->players[0].character = 0;
-
     init_game(pGame);
 
     player* pPlayer = malloc(sizeof(player));
     pGame->players[0] = *pPlayer;
     pPlayer->character = 0;
-    //int8_t character = pGame->players[0].character;
     init_character(pPlayer);
     switch (pPlayer->character) {
         case 0:
@@ -30,6 +23,7 @@ int main() {
     }
 
     int val;
+    shuffle(&(pPlayer->attackSkill));
     getVectorTop(&(pPlayer->attackSkill),&val);
     printf("%d\n", val);
     getCardData(val);

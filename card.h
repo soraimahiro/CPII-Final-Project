@@ -3,6 +3,10 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
+
+#include "architecture.h"
 #include "card_id.h"
 
 typedef enum {
@@ -28,6 +32,6 @@ typedef struct {
 } Card;
 
 const Card* getCardData(CardID id);
-
+void shuffle(vector* v);
 #endif
 
