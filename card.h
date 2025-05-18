@@ -24,6 +24,7 @@ typedef struct {
     uint8_t defense;
     const char* description;
     uint8_t characterBound; // 255 for universal
+    uint8_t last_for_turns;
 } Card;
 
 const Card* getCardData(CardID id);
