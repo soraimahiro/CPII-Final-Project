@@ -1,19 +1,35 @@
 /*
-回合開始階段
-清理階段
-行動階段:
-    專注
-    攻擊
-    防禦
-    移動
-    使用一個技能
-    使用一張必殺
-    購買一張牌
-    其他行動（如被動等等）
-結束階段
+回合開始階段 beginning phase
+清理階段 refresh phase
+行動階段 activation phase:
+    專注 focus
+    攻擊 attack action
+    防禦 defense action
+    移動 move action
+    使用一個技能 use a skill
+    使用一張必殺 use an epic card
+    購買一張牌 power up action
+    其他行動（如被動等等）component action
+結束階段 ending phase
 */
 
 #ifndef STAGE_H
 #define STAGE_H
+#include <stdint.h>
+#include "architecture.h"
 
+int beginning_phase(game* pGame);
+int refresh_phase(game* pGame);
+int activation_phase(game* pGame);
+int ending_phase(game* pGame);
+
+// action
+int focus();
+int attack_action();
+int defense_action();
+int move_action();
+int use_a_skill();
+int use_an_epic_card();
+int power_up_action();
+int component_action();
 #endif
