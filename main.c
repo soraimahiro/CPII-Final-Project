@@ -2,19 +2,16 @@
 #include "card.h"
 #include "stage.h"
 #include "ui.h"
+#include "ui_stage.h"
 #include "architecture.h"
 
+sGame game;
+
 int main() {
-    game* pGame = malloc(sizeof(game));
-    if (!pGame) {
-        fprintf(stderr, "Memory allocation failed\n");
-        exit(1);
-    }
+    init_game();
 
-    init_game(pGame);
-
-    player* pPlayer = malloc(sizeof(player));
-    pGame->players[0] = *pPlayer;
+    sPlayer* pPlayer = malloc(sizeof(sPlayer));
+    game.players[0] = *pPlayer;
     pPlayer->character = 0;
     init_character(pPlayer);
     switch (pPlayer->character) {

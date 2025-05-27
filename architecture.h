@@ -93,7 +93,7 @@ typedef struct _player {
         vector destiny_TOKEN_type;  // 1:blue, 2:red
         int8_t selectToken;
     } scheherazade;
-} player;
+} sPlayer;
 enum state {
     CHOOSE_IDENTITY = 0,
     CHOOSE_TENTACLE_LOCATION,
@@ -223,7 +223,7 @@ GET_ULTRA                     int8_t       choose a special card to hand when yo
 USE_METAMORPHOSIS             int32_t      trigger a active metamorphosis(return index of metamorphosis, 0 base)
 */
 typedef struct _game {
-    player players[4];
+    sPlayer players[4];
     int8_t now_turn_player_id;
     int8_t playerMode;  // 1v1 MODE(0) or 2v2 MODE(1)
     int8_t relicMode;
@@ -243,6 +243,6 @@ typedef struct _game {
     int32_t nowUsingCardID;
     vector nowShowingCards;
     int32_t totalDamage;
-} game;
+} sGame;
 
 #endif

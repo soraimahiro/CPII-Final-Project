@@ -1,17 +1,17 @@
 #include "game.h"
-#include "ui.h"
-#include "card_id.h"
 
-void init_game(game* pGame) {
+extern sGame game;
+
+void init_game() {
     int8_t mode;
     get_init_info(&mode);
-    pGame->playerMode = mode;
+    game.playerMode = mode;
 
-    pGame->now_turn_player_id = 0;
+    game.now_turn_player_id = 0;
 
 }
 
-void init_character(player* p){
+void init_character(sPlayer* p){
     p->hand = initVector();
     p->deck = initVector();
     p->usecards = initVector();
@@ -23,7 +23,7 @@ void init_character(player* p){
     p->specialDeck = initVector();
 }
 
-void init_red_hood(player* p) {
+void init_red_hood(sPlayer* p) {
     p->maxlife = 30;
     p->life = 30;
     p->defense = 0;

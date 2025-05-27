@@ -18,7 +18,7 @@
 #include "architecture.h"
 #include "vector.h"
 void init_client();
-void receive(game *game_status);
+void receive(sGame *game_status);
 void send_data(void *data, size_t size);
 void destroy_client();
 

@@ -16,12 +16,16 @@
 #ifndef STAGE_H
 #define STAGE_H
 #include <stdint.h>
-#include "architecture.h"
+#include <stdbool.h>
 
-int beginning_phase(game* pGame);
-int refresh_phase(game* pGame);
-int activation_phase(game* pGame);
-int ending_phase(game* pGame);
+#include "architecture.h"
+#include "card_id.h"
+#include "ui_stage.h"
+
+int beginning_phase();
+int refresh_phase();
+int activation_phase();
+int ending_phase();
 
 // action
 int focus();

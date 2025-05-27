@@ -1,6 +1,6 @@
 #include "ui.h"
 
-#include <stdio.h>
+extern sGame game;
 
 void get_init_info(int8_t* mode) {
     printf("Enter play mode: ");

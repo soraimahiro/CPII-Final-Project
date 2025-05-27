@@ -1,5 +1,4 @@
 #include "card.h"
-#include <stdio.h>
 
 #define OFFSET 11
 

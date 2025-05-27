@@ -19,7 +19,7 @@ void init_client() {
     }
 }
 
-void receive(game *game_status) { ssize_t bytes_received = read(client_socket, (void *)game_status, sizeof(game)); }
+void receive(sGame *game_status) { ssize_t bytes_received = read(client_socket, (void *)game_status, sizeof(sGame)); }
 void send_data(void *data, size_t size) {  // send(&指定的東西, sizeof(指定的東西))
     ssize_t bytes_sent = write(client_socket, data, size);
 }
