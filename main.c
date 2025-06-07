@@ -6,6 +6,7 @@
 #include "architecture.h"
 
 sGame game;
+int8_t winner = 0;
 
 int main() {
     init_game();
