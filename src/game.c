@@ -3,7 +3,7 @@
 extern sGame game;
 
 void init_game() {
-    int8_t mode;
+    int8_t mode = 0;
     get_init_info(&mode);
     game.playerMode = mode;
 

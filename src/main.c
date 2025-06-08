@@ -10,14 +10,14 @@ int8_t winner = 0;
 
 int main() {
     init_game();
-
+    init_gui();
     sPlayer* pPlayer = malloc(sizeof(sPlayer));
     game.players[0] = *pPlayer;
     pPlayer->character = 0;
     init_character(pPlayer);
     switch (pPlayer->character) {
         case 0:
-                init_red_hood(pPlayer);
+            init_red_hood(pPlayer);
     }
 
     int val;
@@ -25,4 +25,17 @@ int main() {
     getVectorTop(&(pPlayer->attackSkill),&val);
     printf("%d\n", val);
     getCardData(val);
+
+    // GUI 主循環
+    while (!WindowShouldClose()) {
+        update_gui();
+        draw_gui();
+    }
+    printf("close GUI\n");
+    close_gui();
+
+    // 記得釋放記憶體
+    free(pPlayer);
+
+    return 0;
 }
