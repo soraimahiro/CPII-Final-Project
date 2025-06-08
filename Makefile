@@ -2,7 +2,7 @@ CFILES = src/*.c
 OUTPUT = build/main
 
 linux:
-	gcc $(CFILES) -o $(OUTPUT) -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+	gcc $(CFILES) -o $(OUTPUT) -lSDL2 -lSDL2_ttf
 
 clean:
 	find ./build -type f -executable -delete

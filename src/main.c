@@ -27,7 +27,7 @@ int main() {
     getCardData(val);
 
     // GUI 主循環
-    while (!WindowShouldClose()) {
+    while (is_running()) {
         update_gui();
         draw_gui();
     }
