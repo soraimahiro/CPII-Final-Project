@@ -1,0 +1,36 @@
+#pragma once
+
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+
+typedef struct _sUiBase {
+    SDL_Window *window;
+    SDL_Renderer *renderer;
+    TTF_Font *font;
+} sUiBase;
+
+// text
+void draw_text(const char* text, int32_t x, int32_t y, SDL_Color color, int32_t font_size);
+void draw_text_center(const char* text, int32_t x, int32_t y, SDL_Color color, int32_t font_size);
+
+// button
+typedef struct {
+    SDL_Rect rect;
+    char* text;
+    SDL_Color textColor;
+    SDL_Color textHoverColor;
+    SDL_Color bgColor;
+    SDL_Color bgHoverColor;
+    SDL_Color borderColor;
+    int32_t fontSize;
+} sButton;
+
+sButton *create_button(SDL_Rect rext, char *text, 
+                       SDL_Color textColor, SDL_Color textHoverColor,
+                       SDL_Color bgColor, SDL_Color bgHoverColor, 
+                       SDL_Color borderColor, int32_t fontSize);
+void draw_button(sButton *button);
+bool mouse_in_button(sButton *button);

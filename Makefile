@@ -1,9 +1,8 @@
-.IGNORE:
+CFILES = src/*.c
+OUTPUT = build/main
 
-all:
-	gcc main.c game.c ui.c vector.c stage.c card.c -o main
+linux:
+	gcc $(CFILES) -o $(OUTPUT) -lSDL2 -lSDL2_ttf
 
 clean:
-	find . -type f -executable -delete
-
-
+	find ./build -type f -executable -delete
