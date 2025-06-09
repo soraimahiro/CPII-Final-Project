@@ -16,7 +16,7 @@ void init_ui() {
         return;
     }
     
-    uiBase.window = SDL_CreateWindow(WINDOW_TITLE,
+    uiBase.window = SDL_CreateWindow("Twisted Fables",
                              SDL_WINDOWPOS_CENTERED,
                              SDL_WINDOWPOS_CENTERED,
                              SCREEN_WIDTH,
@@ -90,7 +90,8 @@ void game_init_menu(){
     SDL_SetRenderDrawColor(uiBase.renderer, 32, 32, 32, 255);
     SDL_RenderClear(uiBase.renderer);
 
-    draw_text_center("Twisted Fables", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 150, white, 100);
+    draw_text_center("Twisted Fables", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 150, white, 60);
+    draw_text_center("扭曲寓言", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 80, white, 60);
 
     draw_button(pveButton);
     draw_button(pvpButton);
@@ -124,15 +125,14 @@ void game_init_charactor(int32_t *nowPlayer){
     SDL_RenderPresent(uiBase.renderer);
 }
 
-void game_play_event(){
+void game_play(){
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             running = 0;
         }
     }
-}
-void game_play_show(){
+    
     SDL_SetRenderDrawColor(uiBase.renderer, 32, 32, 32, 255);
     SDL_RenderClear(uiBase.renderer);
 
@@ -142,15 +142,14 @@ void game_play_show(){
     SDL_RenderPresent(uiBase.renderer);
 }
 
-void game_over_event(){
+void game_over(){
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             running = 0;
         }
     }
-}
-void game_over_show(){
+    
     SDL_SetRenderDrawColor(uiBase.renderer, 32, 32, 32, 255);
     SDL_RenderClear(uiBase.renderer);
 

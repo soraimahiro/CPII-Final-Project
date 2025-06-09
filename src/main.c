@@ -28,12 +28,10 @@ int main() {
             game_init_charactor(&nowPlayer);
         }
         else if(nowState == GAME_PLAY){
-            game_play_event();
-            game_play_show();
+            game_play();
         }
         else{
-            game_over_event();
-            game_over_show();
+            game_over();
         }
     }
 
