@@ -7,7 +7,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
+// #include "ui_component.h"
 #include "architecture.h"
+#include "game.h"
+#include "ui_component.h"
 
 // 視窗常數
 #define SCREEN_WIDTH 1280
@@ -16,34 +19,15 @@
 
 // 字體常數
 #define FONT_PATH "assets/fonts/jf-openhuninn-2.0.ttf"
-#define FONT_SIZE_LARGE 40
-#define FONT_SIZE_MEDIUM 20
-#define FONT_SIZE_SMALL 16
-#define FONT_SIZE_TINY 12
 
-// 畫面狀態
-typedef enum {
-    SCREEN_MENU = 0,
-    SCREEN_GAME
-} ScreenState;
+void init_ui();
+void close_ui();
 
-// 按鈕結構
-typedef struct {
-    SDL_Rect rect;
-    char* text;
-    SDL_Color color;
-    SDL_Color hoverColor;
-    bool isHovered;
-} Button;
-
-void get_init_info(int8_t* mode);
-void init_gui();
-void close_gui();
-TTF_Font* get_font_by_size(int fontSize);
-void update_gui();
-void draw_gui();
-ScreenState get_current_screen();
-void set_current_screen(ScreenState screen);
-bool is_running();
+void game_init_menu();
+void game_init_charactor(int32_t *nowPlayer);
+void game_play_event();
+void game_play_show();
+void game_over_event();
+void game_over_show();
 
 #endif

@@ -11,7 +11,7 @@
 
 #include "vector.h"
 
-typedef struct _player {
+typedef struct _sPlayer {
     int8_t team;  // for 2v2 mode
     uint8_t locate[2];
     uint8_t character;
@@ -222,10 +222,10 @@ TOKEN_GOAL                    int8_t       choose location of the token you choo
 GET_ULTRA                     int8_t       choose a special card to hand when your life lower than gate first time
 USE_METAMORPHOSIS             int32_t      trigger a active metamorphosis(return index of metamorphosis, 0 base)
 */
-typedef struct _game {
+typedef struct _sGame {
     sPlayer players[4];
     int8_t now_turn_player_id;
-    int8_t playerMode;  // 1v1 MODE(0) or 2v2 MODE(1)
+    int8_t playerMode;  // pve(0) pvp(1)
     int8_t relicMode;
     // mermaid
     vector tentacle_TOKEN_locate;

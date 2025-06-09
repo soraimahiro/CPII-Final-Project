@@ -3,12 +3,6 @@
 extern sGame game;
 
 void init_game() {
-    int8_t mode = 0;
-    get_init_info(&mode);
-    game.playerMode = mode;
-
-    game.now_turn_player_id = 0;
-
 }
 
 void init_character(sPlayer* p){

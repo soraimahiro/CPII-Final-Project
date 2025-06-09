@@ -5,6 +5,7 @@ extern int8_t winner;
 
 #define TOTAL_PLAYER game.playerMode == 0 ? 2 : 4
 
+
 int check_game_winner(){
     int32_t team1_life = 0;
     int32_t team2_life = 0;

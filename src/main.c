@@ -3,39 +3,59 @@
 #include "stage.h"
 #include "ui.h"
 #include "ui_stage.h"
+#include "ui_component.h"
 #include "architecture.h"
 
 sGame game;
+sUiBase uiBase;
+gameState nowState = GAME_INIT_MENU;
+bool running = 0;
+
 int8_t winner = 0;
 
 int main() {
-    init_game();
-    init_gui();
-    sPlayer* pPlayer = malloc(sizeof(sPlayer));
-    game.players[0] = *pPlayer;
-    pPlayer->character = 0;
-    init_character(pPlayer);
-    switch (pPlayer->character) {
-        case 0:
-            init_red_hood(pPlayer);
+
+    init_ui();
+
+    nowState = GAME_INIT_MENU;
+    running = 1;
+    while (running) {
+        if(nowState == GAME_INIT_MENU){
+            game_init_menu();
+        }
+        else if(nowState == GAME_INIT_CHARACTOR){
+            int32_t nowPlayer;
+            game_init_charactor(&nowPlayer);
+        }
+        else if(nowState == GAME_PLAY){
+            game_play_event();
+            game_play_show();
+        }
+        else{
+            game_over_event();
+            game_over_show();
+        }
     }
 
-    int val;
-    shuffle(&(pPlayer->attackSkill));
-    getVectorTop(&(pPlayer->attackSkill),&val);
-    printf("%d\n", val);
-    getCardData(val);
+    close_ui();
 
-    // GUI 主循環
-    while (is_running()) {
-        update_gui();
-        draw_gui();
-    }
-    printf("close GUI\n");
-    close_gui();
+    // sPlayer* pPlayer = malloc(sizeof(sPlayer));
+    // game.players[0] = *pPlayer;
+    // pPlayer->character = 0;
+    // init_character(pPlayer);
+    // switch (pPlayer->character) {
+    //     case 0:
+    //         init_red_hood(pPlayer);
+    // }
 
-    // 記得釋放記憶體
-    free(pPlayer);
+    // int val;
+    // shuffle(&(pPlayer->attackSkill));
+    // getVectorTop(&(pPlayer->attackSkill),&val);
+    // printf("%d\n", val);
+    // getCardData(val);
+    // free(pPlayer);
+
+    
 
     return 0;
 }
