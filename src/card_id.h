@@ -215,5 +215,23 @@ typedef enum {
     CARD_SCHEHERAZADE_METAMORPH4_FAIRYTALE_WEAVER = 176
 } CardID;
 
+// 角色枚舉
+typedef enum {
+    CHARACTER_REDHOOD = 0,          // 小紅帽 0
+    CHARACTER_SNOWWHITE = 1,        // 白雪公主 1
+    CHARACTER_SLEEPINGBEAUTY = 2,   // 睡美人 2
+    CHARACTER_ALICE = 3,            // 愛麗絲 3
+    CHARACTER_MULAN = 4,            // 花木蘭 4
+    CHARACTER_KAGUYA = 5,           // 輝夜姬 5
+    CHARACTER_MERMAID = 6,          // 美人魚 6
+    CHARACTER_MATCHGIRL = 7,        // 火柴女孩 7
+    CHARACTER_DOROTHY = 8,          // 桃樂絲 8
+    CHARACTER_SCHEHERAZADE = 9,     // 山魯佐德 9
+    CHARACTER_COUNT = 10
+} CharacterID;
+
+// 選擇畫面顯示的角色數量
+#define CHARACTER_SELECT_COUNT 6
+
 #endif
 

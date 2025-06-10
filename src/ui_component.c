@@ -52,12 +52,12 @@ sButton *create_button(SDL_Rect rect, char *text,
     if (!button) return NULL;
     
     button->rect = rect;
-    button->text = malloc(strlen(text));
+    button->text = malloc(strlen(text) + 1); // 修正：需要額外空間給字串結尾符號
     if (!button->text) {
         free(button);
         return NULL;
     }
-    strncpy(button->text, text, strlen(text));
+    strcpy(button->text, text); // 修正：使用 strcpy 而非 strncpy
     
     button->textColor = textColor;
     button->textHoverColor = textHoverColor;

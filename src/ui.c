@@ -1,9 +1,14 @@
 #include "ui.h"
+#include "character_select.h"
 
 extern sGame game;
 extern sUiBase uiBase;
 extern gameState nowState;
 extern bool running;
+
+// 角色選擇狀態管理
+static CharacterSelectState character_select_state;
+static bool character_select_initialized = false;
 
 void init_ui() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -107,22 +112,40 @@ void game_init_menu(){
     }
 }
 void game_init_charactor(int32_t *nowPlayer){
-    SDL_SetCursor(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW));
+    // 初始化角色選擇狀態
+    if (!character_select_initialized) {
+        int num_players = (game.playerMode == 0) ? 2 : 2; // PVE和PVP都是2人
+        init_character_select(&character_select_state, num_players);
+        character_select_initialized = true;
+    }
 
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             running = 0;
+            return;
+        }
+        
+        // 處理角色選擇事件
+        int selection_result = handle_character_select_event(&event, &character_select_state, SCREEN_WIDTH, SCREEN_HEIGHT);
+        if (selection_result == 1) {
+            // 角色選擇完成，保存選擇結果到遊戲狀態
+            // 重置角色選擇狀態
+            character_select_initialized = false;
+            cleanup_character_select(&character_select_state);
+            
+            // 進入遊戲狀態
+            nowState = GAME_PLAY;
+            return;
         }
     }
 
+    // 設定背景
     SDL_SetRenderDrawColor(uiBase.renderer, 32, 32, 32, 255);
     SDL_RenderClear(uiBase.renderer);
-
-    SDL_Color white = {255, 255, 255, 255};
-    draw_text_center("玩家1選擇角色", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 200, white, 40);
-
-    SDL_RenderPresent(uiBase.renderer);
+    
+    // 渲染角色選擇介面
+    render_character_select(uiBase.renderer, uiBase.font, &character_select_state, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 void game_play(){

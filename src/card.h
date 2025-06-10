@@ -15,6 +15,7 @@ typedef enum {
     TYPE_DEFENSE,
     TYPE_MOVE,
     TYPE_SPECIAL,
+    TYPE_BASIC,      // 加入這行
     TYPE_METAMORPH,
 } CardType;
 
