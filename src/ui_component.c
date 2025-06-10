@@ -45,60 +45,93 @@ void draw_text_center(const char* text, int32_t x, int32_t y, SDL_Color color, i
 }
 
 sButton *create_button(SDL_Rect rect, char *text, 
-                       SDL_Color textColor, SDL_Color textHoverColor,
-                       SDL_Color bgColor, SDL_Color bgHoverColor, 
-                       SDL_Color borderColor, int32_t fontSize) {
-    sButton *button = (sButton*)malloc(sizeof(sButton));
-    if (!button) return NULL;
+                       SDL_Color *textColor, SDL_Color *bgColor, 
+                       SDL_Color *borderColor, int32_t fontSize, int32_t typeNumber) {
+    sButton *pButton = calloc(1, sizeof(sButton));
+    if (!pButton) return NULL;
     
-    button->rect = rect;
-    button->text = malloc(strlen(text));
-    if (!button->text) {
-        free(button);
+    pButton->rect = rect;
+    pButton->text = malloc(strlen(text) + 1);
+    if (!pButton->text) {
+        free(pButton);
         return NULL;
     }
-    strncpy(button->text, text, strlen(text));
+    strcpy(pButton->text, text);
     
-    button->textColor = textColor;
-    button->textHoverColor = textHoverColor;
-    button->bgColor = bgColor;
-    button->bgHoverColor = bgHoverColor;
-    button->borderColor = borderColor;
-    button->fontSize = fontSize;
+    pButton->textColor = calloc(typeNumber, sizeof(SDL_Color));
+    if (!pButton->textColor) {
+        free(pButton->text);
+        free(pButton);
+        return NULL;
+    }
+    memcpy(pButton->textColor, textColor, typeNumber * sizeof(SDL_Color));
     
-    return button;
+    pButton->bgColor = calloc(typeNumber, sizeof(SDL_Color));
+    if (!pButton->bgColor) {
+        free(pButton->textColor);
+        free(pButton->text);
+        free(pButton);
+        return NULL;
+    }
+    memcpy(pButton->bgColor, bgColor, typeNumber * sizeof(SDL_Color));
+    
+    pButton->borderColor = calloc(typeNumber, sizeof(SDL_Color));
+    if (!pButton->borderColor) {
+        free(pButton->bgColor);
+        free(pButton->textColor);
+        free(pButton->text);
+        free(pButton);
+        return NULL;
+    }
+    memcpy(pButton->borderColor, borderColor, typeNumber * sizeof(SDL_Color));
+    
+    pButton->fontSize = fontSize;
+    pButton->typeNumber = typeNumber;
+    
+    return pButton;
 }
 
-void draw_button(sButton *button) {
-    if (!button || !uiBase.renderer) return;
+void free_button(sButton *pButton){
+    if(!pButton) return;
+    free(pButton->textColor);
+    free(pButton->bgColor);
+    free(pButton->borderColor);
+    free(pButton->text);
+    free(pButton);
+}
+
+void draw_button(sButton *pButton, int8_t type) {
+    if (!pButton || !uiBase.renderer){
+        printf("draw button error!");
+        return;
+    }
+    if(type >= pButton->typeNumber){
+        type = pButton->typeNumber-1;
+    }
     
-    bool isHovered = mouse_in_button(button);
+    SDL_Color bgColor = pButton->bgColor[type];
+    SDL_Color borderColor = pButton->borderColor[type];
+    SDL_Color textColor = pButton->textColor[type];
     
-    // 繪製按鈕背景
-    SDL_Color bgColor = isHovered ? button->bgHoverColor : button->bgColor;
     SDL_SetRenderDrawColor(uiBase.renderer, bgColor.r, bgColor.g, bgColor.b, bgColor.a);
-    SDL_RenderFillRect(uiBase.renderer, &button->rect);
+    SDL_RenderFillRect(uiBase.renderer, &pButton->rect);
     
-    // 繪製按鈕邊框
-    SDL_Color borderColor = button->borderColor;
     SDL_SetRenderDrawColor(uiBase.renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
-    SDL_RenderDrawRect(uiBase.renderer, &button->rect);
+    SDL_RenderDrawRect(uiBase.renderer, &pButton->rect);
     
-    int32_t textX = button->rect.x + button->rect.w/2;
-    int32_t textY = button->rect.y + button->rect.h/2;
-    SDL_Color textColor = isHovered ? button->textHoverColor : button->textColor;
-    draw_text_center(button->text, textX, textY, textColor, button->fontSize);
-
+    int32_t textX = pButton->rect.x + pButton->rect.w/2;
+    int32_t textY = pButton->rect.y + pButton->rect.h/2;
+    draw_text_center(pButton->text, textX, textY, textColor, pButton->fontSize);
 }
 
-bool mouse_in_button(sButton *button) {
-    if (!button) return false;
+bool mouse_in_button(sButton *pButton) {
+    if (!pButton) return false;
     
     int mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
     
-    return (mouseX >= button->rect.x && 
-            mouseX < button->rect.x + button->rect.w &&
-            mouseY >= button->rect.y && 
-            mouseY < button->rect.y + button->rect.h);
+    return (mouseX >= pButton->rect.x && 
+            mouseX < pButton->rect.x + pButton->rect.w &&
+            mouseY >= pButton->rect.y && 
+            mouseY < pButton->rect.y + pButton->rect.h);
 }

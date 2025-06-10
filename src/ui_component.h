@@ -20,17 +20,16 @@ void draw_text_center(const char* text, int32_t x, int32_t y, SDL_Color color, i
 typedef struct {
     SDL_Rect rect;
     char* text;
-    SDL_Color textColor;
-    SDL_Color textHoverColor;
-    SDL_Color bgColor;
-    SDL_Color bgHoverColor;
-    SDL_Color borderColor;
+    SDL_Color *textColor;
+    SDL_Color *bgColor;
+    SDL_Color *borderColor;
     int32_t fontSize;
+    int32_t typeNumber;
 } sButton;
 
 sButton *create_button(SDL_Rect rext, char *text, 
-                       SDL_Color textColor, SDL_Color textHoverColor,
-                       SDL_Color bgColor, SDL_Color bgHoverColor, 
-                       SDL_Color borderColor, int32_t fontSize);
-void draw_button(sButton *button);
+                       SDL_Color *textColor, SDL_Color *bgColor, 
+                       SDL_Color *borderColor, int32_t fontSize, int32_t typeNumber);
+void free_button(sButton *pButton);
+void draw_button(sButton *button, int8_t type);
 bool mouse_in_button(sButton *button);

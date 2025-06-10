@@ -5,9 +5,11 @@
 #include "ui.h"
 #include "card_id.h"
 
+#define TOTAL_PLAYER game.playerMode == 0 ? 2 : 4
+
 typedef enum _gameState{
-    GAME_INIT_MENU = 0,
-    GAME_INIT_CHARACTOR,
+    GAME_MENU = 0,
+    GAME_INIT,
     GAME_PLAY,
     GAME_OVER
 } gameState;

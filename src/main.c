@@ -8,24 +8,23 @@
 
 sGame game;
 sUiBase uiBase;
-gameState nowState = GAME_INIT_MENU;
+gameState nowState = GAME_MENU;
 bool running = 0;
 
 int8_t winner = 0;
 
-int main() {
+int main(int argc, char **argv) {
 
     init_ui();
 
-    nowState = GAME_INIT_MENU;
+    nowState = GAME_MENU;
     running = 1;
     while (running) {
-        if(nowState == GAME_INIT_MENU){
-            game_init_menu();
+        if(nowState == GAME_MENU){
+            game_menu();
         }
-        else if(nowState == GAME_INIT_CHARACTOR){
-            int32_t nowPlayer;
-            game_init_charactor(&nowPlayer);
+        else if(nowState == GAME_INIT){
+            game_init();
         }
         else if(nowState == GAME_PLAY){
             game_play();

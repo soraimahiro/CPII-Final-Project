@@ -20,8 +20,8 @@
 void init_ui();
 void close_ui();
 
-void game_init_menu();
-void game_init_charactor(int32_t *nowPlayer);
+void game_menu();
+void game_init();
 void game_play();
 void game_over();
 
