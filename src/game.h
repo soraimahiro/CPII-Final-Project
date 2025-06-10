@@ -2,7 +2,6 @@
 #define GAME_H
 
 #include "architecture.h"
-#include "ui.h"
 #include "card_id.h"
 
 #define TOTAL_PLAYER game.playerMode == 0 ? 2 : 4

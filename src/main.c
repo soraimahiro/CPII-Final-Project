@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 
     init_ui();
 
-    nowState = GAME_MENU;
+    change_state(GAME_MENU);
     running = 1;
     while (running) {
         if(nowState == GAME_MENU){

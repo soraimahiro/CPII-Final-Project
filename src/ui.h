@@ -17,6 +17,13 @@
 
 #define FONT_PATH "assets/fonts/jf-openhuninn-2.0.ttf"
 
+// Confirmation dialog state
+extern bool showConfirmDialog;
+
+// State management
+void change_state(gameState newState);
+void cleanup_current_state();
+
 void init_ui();
 void close_ui();
 
