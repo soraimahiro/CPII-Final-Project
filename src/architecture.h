@@ -12,9 +12,10 @@
 #include "vector.h"
 
 typedef struct _sPlayer {
+    bool isBOT;
     int8_t team;  // for 2v2 mode
     uint8_t locate[2];
-    uint8_t character;
+    int8_t character;
     uint8_t maxlife;
     uint8_t life;
     uint8_t maxdefense;
@@ -225,7 +226,7 @@ USE_METAMORPHOSIS             int32_t      trigger a active metamorphosis(return
 typedef struct _sGame {
     sPlayer players[4];
     int8_t now_turn_player_id;
-    int8_t playerMode;  // pve(0) pvp(1)
+    int8_t playerMode;  // 1v1(0) 2v2(1)
     int8_t relicMode;
     // mermaid
     vector tentacle_TOKEN_locate;

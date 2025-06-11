@@ -2,7 +2,7 @@
 
 extern sGame game;
 
-void init_game() {
+void game_init() {
 }
 
 void init_character(sPlayer* p){

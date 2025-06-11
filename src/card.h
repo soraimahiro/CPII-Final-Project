@@ -11,6 +11,7 @@
 #include "card_id.h"
 
 typedef enum {
+    TYPE_BASIC,
     TYPE_ATTACK,
     TYPE_DEFENSE,
     TYPE_MOVE,
@@ -34,5 +35,17 @@ typedef struct {
 
 const Card* getCardData(CardID id);
 void shuffle(vector* v);
+
+// character
+typedef struct {
+    CharacterID character_id;
+    const char* name;
+    const char* description;
+    uint8_t maxlife;
+    uint8_t maxdefense;
+    uint8_t ultimate_threshold;
+} sCharacterInfo;
+
+sCharacterInfo get_character_info(CharacterID id);
 #endif
 
