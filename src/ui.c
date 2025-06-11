@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "character_select.h"
 
 extern sGame game;
 extern sUiBase uiBase;
@@ -242,6 +243,7 @@ void game_init(){
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             running = 0;
+            return;
         }
         else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
             if(showConfirmDialog) {
