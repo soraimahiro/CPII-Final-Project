@@ -8,6 +8,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef DEBUG
+#define DEBUG_PRINT_VEC(vec, fmt, ...) do { \
+    fprintf(stderr, "[DEBUG] " fmt " (size=%u): [", ##__VA_ARGS__, (vec)->SIZE); \
+    for (int32_t vec_idx = 0; vec_idx < (vec)->SIZE; vec_idx++) { \
+        fprintf(stderr, "%d", (vec)->array[vec_idx]); \
+        if (vec_idx < (vec)->SIZE - 1) fprintf(stderr, ", "); \
+    } \
+    fprintf(stderr, "]\n"); \
+} while(0)
+#else
+#define DEBUG_PRINT_VEC(vec, fmt, ...) ((void)0)
+#endif
+
 typedef struct _vector {
     int32_t array[256];
     uint32_t SIZE;

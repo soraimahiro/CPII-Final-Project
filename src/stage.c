@@ -103,8 +103,11 @@ int activation_phase(){
         switch (active) {
             case 1:
                 result = focus();
+                break;
         }
     } while(result != 0 && !winner);
+    
+    return 0; // 加入返回值
 }
 
 int ending_phase(){
@@ -116,6 +119,8 @@ int ending_phase(){
             popbackVector(&(game.players[i].hand));
         }
     }
+    
+    return 0; // 加入返回值
 }
 
 // action
@@ -147,6 +152,8 @@ int attack_action(){
         printf("沒有對手在射程內\n");
         return 1;
     }
+    
+    return 0; // 加入返回值
 }
 int defense_action();
 int move_action();

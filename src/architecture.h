@@ -11,6 +11,12 @@
 
 #include "vector.h"
 
+#ifdef DEBUG
+#define DEBUG_PRINT(fmt, ...) fprintf(stderr, "[DEBUG] " fmt, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINT(fmt, ...) ((void)0)
+#endif
+
 typedef struct _sPlayer {
     bool isBOT;
     int8_t team;  // for 2v2 mode

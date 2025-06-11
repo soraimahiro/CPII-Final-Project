@@ -140,15 +140,18 @@ void change_state(gameState newState) {
                     botCount++;
                 }
             }
-            if(botCount == playerCount){
-                game_init();
-                change_state(GAME_PLAY);
-                return;
-            }
-
+            
+            // 創建角色選擇界面（無論是否有機器人都要創建）
             stateComponent.characterSelect = calloc(1, sizeof(sCharacterSelect));
             stateComponent.characterSelect->showCharacterInfo = -1;
             stateComponent.characterSelect->showWarningDialog = false;
+            
+            // 如果全部都是機器人，直接分配角色但不調用 game_init()
+            if(botCount == playerCount){
+                for(int32_t i = 0; i < playerCount; i++){
+                    game.players[i].character = selectable_characters[i % SELECTABLE_CHARACTER_COUNT];
+                }
+            }
 
             for(int32_t i = 0; i < SELECTABLE_CHARACTER_COUNT; i++){
                 // 300 ~ 1000
@@ -439,26 +442,86 @@ void game_init_character_select_ui(){
             }
             else{
                 if(mouse_in_button(stateComponent.characterSelect->pAcceptButton)){
-                    // 檢查是否有重複選擇的角色
-                    bool hasDuplicate = false;
-                    for(int32_t i = 0; i < playerCount && !hasDuplicate; i++){
-                        if(game.players[i].character != -1) {
-                            for(int32_t j = i + 1; j < playerCount; j++){
-                                if(game.players[j].character == game.players[i].character) {
-                                    hasDuplicate = true;
-                                    break;
-                                }
-                            }
+                    // 檢查是否有人類玩家未選擇角色
+                    bool hasUnselectedPlayer = false;
+                    for(int32_t i = 0; i < playerCount; i++){
+                        if(!game.players[i].isBOT && game.players[i].character == -1) {
+                            hasUnselectedPlayer = true;
+                            break;
                         }
                     }
                     
-                    if(hasDuplicate) {
+                    if(hasUnselectedPlayer) {
                         stateComponent.characterSelect->showWarningDialog = true;
                     }
                     else {
-                        game_init();
-                        change_state(GAME_PLAY);
-                        return;
+                        // 檢查是否所有人都是機器人，如果是就為他們分配角色
+                        int32_t botCount = 0;
+                        for(int32_t i = 0; i < playerCount; i++){
+                            if(game.players[i].isBOT) botCount++;
+                        }
+                        
+                        if(botCount == playerCount) {
+                            // 如果全部都是機器人且還沒分配角色，現在分配
+                            for(int32_t i = 0; i < playerCount; i++){
+                                if(game.players[i].character == -1) {
+                                    game.players[i].character = selectable_characters[i % SELECTABLE_CHARACTER_COUNT];
+                                }
+                            }
+                        } else {
+                            // 先收集人類玩家已選的角色
+                            bool usedCharacters[SELECTABLE_CHARACTER_COUNT] = {false};
+                            for(int32_t i = 0; i < playerCount; i++){
+                                if(!game.players[i].isBOT && game.players[i].character != -1) {
+                                    for(int32_t j = 0; j < SELECTABLE_CHARACTER_COUNT; j++) {
+                                        if(selectable_characters[j] == game.players[i].character) {
+                                            usedCharacters[j] = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // 為機器人分配未被使用的角色
+                            int32_t botCharacterIndex = 0;
+                            for(int32_t i = 0; i < playerCount; i++){
+                                if(game.players[i].isBOT){
+                                    // 找到下一個未被使用的角色
+                                    while(botCharacterIndex < SELECTABLE_CHARACTER_COUNT && usedCharacters[botCharacterIndex]) {
+                                        botCharacterIndex++;
+                                    }
+                                    
+                                    if(botCharacterIndex < SELECTABLE_CHARACTER_COUNT) {
+                                        game.players[i].character = selectable_characters[botCharacterIndex];
+                                        usedCharacters[botCharacterIndex] = true;
+                                        botCharacterIndex++;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 最後檢查是否還有重複（應該不會有了）
+                        bool hasDuplicate = false;
+                        for(int32_t i = 0; i < playerCount && !hasDuplicate; i++){
+                            if(game.players[i].character != -1) {
+                                for(int32_t j = i + 1; j < playerCount; j++){
+                                    if(game.players[j].character == game.players[i].character) {
+                                        hasDuplicate = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if(hasDuplicate) {
+                            stateComponent.characterSelect->showWarningDialog = true;
+                        }
+                        else {
+                            // 只在這裡調用一次 game_init()
+                            game_init();
+                            change_state(GAME_PLAY);
+                            return;
+                        }
                     }
                 }
                 for(int32_t i = 0; i < SELECTABLE_CHARACTER_COUNT; i++){
@@ -537,8 +600,39 @@ void game_init_character_select_ui(){
         int32_t centerY = SCREEN_HEIGHT/2;
         
         draw_text_center("警告", centerX, centerY - 50, white, 36);
-        draw_text_center("不能選擇相同角色！", centerX, centerY - 10, white, 28);
-        draw_text_center("請重新選擇", centerX, centerY + 30, white, 24);
+        
+        // 檢查是角色重複還是未選擇的問題
+        bool hasUnselectedPlayer = false;
+        bool hasDuplicate = false;
+        
+        for(int32_t i = 0; i < playerCount; i++){
+            if(!game.players[i].isBOT && game.players[i].character == -1) {
+                hasUnselectedPlayer = true;
+                break;
+            }
+        }
+        
+        if(!hasUnselectedPlayer) {
+            for(int32_t i = 0; i < playerCount && !hasDuplicate; i++){
+                if(game.players[i].character != -1) {
+                    for(int32_t j = i + 1; j < playerCount; j++){
+                        if(game.players[j].character == game.players[i].character) {
+                            hasDuplicate = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(hasUnselectedPlayer) {
+            draw_text_center("有玩家尚未選擇角色！", centerX, centerY - 10, white, 28);
+            draw_text_center("請完成角色選擇", centerX, centerY + 30, white, 24);
+        }
+        else if(hasDuplicate) {
+            draw_text_center("不能選擇相同角色！", centerX, centerY - 10, white, 28);
+            draw_text_center("請重新選擇", centerX, centerY + 30, white, 24);
+        }
         
         // 提示文字
         draw_text_center("點擊視窗外區域關閉", centerX, centerY + 70, lightblue1, 20);
@@ -598,7 +692,6 @@ void game_play_ui(){
     
     SDL_SetRenderDrawColor(uiBase.renderer, 32, 32, 32, 255);
     SDL_RenderClear(uiBase.renderer);
-
     SDL_Color white = {255, 255, 255, 255};
     draw_text_center("Play", SCREEN_WIDTH/2, SCREEN_HEIGHT/2, white, 36);
 
