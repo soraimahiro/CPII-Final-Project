@@ -119,9 +119,11 @@ void draw_button(sButton *pButton, int8_t type) {
     SDL_SetRenderDrawColor(uiBase.renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
     SDL_RenderDrawRect(uiBase.renderer, &pButton->rect);
     
-    int32_t textX = pButton->rect.x + pButton->rect.w/2;
-    int32_t textY = pButton->rect.y + pButton->rect.h/2;
-    draw_text_center(pButton->text, textX, textY, textColor, pButton->fontSize);
+    if(strlen(pButton->text) > 0){
+        int32_t textX = pButton->rect.x + pButton->rect.w/2;
+        int32_t textY = pButton->rect.y + pButton->rect.h/2;
+        draw_text_center(pButton->text, textX, textY, textColor, pButton->fontSize);
+    }
 }
 
 bool mouse_in_button(sButton *pButton) {

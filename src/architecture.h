@@ -15,7 +15,7 @@ typedef struct _sPlayer {
     bool isBOT;
     int8_t team;  // for 2v2 mode
     uint8_t locate[2];
-    uint8_t character;
+    int8_t character;
     uint8_t maxlife;
     uint8_t life;
     uint8_t maxdefense;

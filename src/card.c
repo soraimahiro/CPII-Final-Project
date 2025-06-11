@@ -219,7 +219,7 @@ void shuffle(vector* v) {
     }
 }
 
-static const CharacterInfo character_data[CHARACTER_COUNT] = {
+static const sCharacterInfo character_data[CHARACTER_COUNT] = {
     {CHARACTER_REDHOOD, "小紅帽", "科技射手，擅長遠程攻擊", 30, 6, 15},
     {CHARACTER_SNOWWHITE, "白雪公主", "毒術師，以毒攻敵", 34, 6, 17},
     {CHARACTER_SLEEPINGBEAUTY, "睡美人", "血魔法師，覺醒與沉睡", 42, 6, 21},
@@ -232,7 +232,7 @@ static const CharacterInfo character_data[CHARACTER_COUNT] = {
     {CHARACTER_SCHEHERAZADE, "山魯佐德", "命運編織者，故事操控", 36, 6, 18}
 };
 
-CharacterInfo get_character_info(CharacterID id) {
+sCharacterInfo get_character_info(CharacterID id) {
     if (id >= 0 && id < CHARACTER_COUNT) {
         return character_data[id];
     }

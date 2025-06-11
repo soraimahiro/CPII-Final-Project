@@ -1,5 +1,4 @@
 #include "ui.h"
-#include "character_select.h"
 
 extern sGame game;
 extern sUiBase uiBase;
@@ -12,6 +11,7 @@ const SDL_Color gray1 = {32, 32, 32, 255};
 const SDL_Color gray2 = {64, 64, 64, 255};
 const SDL_Color lightblue1 = {160, 245, 255, 255};
 const SDL_Color lightblue2 = {120, 190, 200, 255};
+const SDL_Color darkblue1 = {60, 80, 200, 255};
 
 bool showConfirmDialog = false;
 
@@ -23,8 +23,18 @@ int32_t menuButtonCount = 0;
 int32_t initButtonCount = 0;
 int32_t confirmButtonCount = 0;
 
+uStateComponent stateComponent;
+
+static const CharacterID selectable_characters[6] = {
+    CHARACTER_REDHOOD,       // 小紅帽
+    CHARACTER_MULAN,         // 花木蘭
+    CHARACTER_SNOWWHITE,     // 白雪公主
+    CHARACTER_SLEEPINGBEAUTY,// 睡美人
+    CHARACTER_ALICE,         // 愛麗絲
+    CHARACTER_KAGUYA        // 輝夜姬
+};
+
 void cleanup_current_state() {
-    printf("clean state\n");
     // Clean up menu buttons
     if (menuButtons) {
         for (int32_t i = 0; i < menuButtonCount; i++) {
@@ -56,6 +66,19 @@ void cleanup_current_state() {
     }
     
     showConfirmDialog = false;
+
+    if(nowState == GAME_INIT_CHARACTER_SELECT && stateComponent.characterSelect){
+        printf("free charactor\n");
+        int32_t PlayerCount = TOTAL_PLAYER;
+        for(int32_t i = 0; i < SELECTABLE_CHARACTER_COUNT; i++){
+            free_button(stateComponent.characterSelect->ppShowInfoButton[i]);
+            for(int32_t j = 0; j < PlayerCount; j++){
+                free_button(stateComponent.characterSelect->pppPlayerSelect[j][i]);
+            }
+        }
+        free_button(stateComponent.characterSelect->pAcceptButton);
+        free(stateComponent.characterSelect);
+    }
 }
 
 void change_state(gameState newState) {
@@ -78,34 +101,72 @@ void change_state(gameState newState) {
             menuButtons[1] = create_button(exitButtonRect, "離開遊戲", textColors, bgColors, borderColors, 24, 2);
             break;
             
-        case GAME_INIT:
-            {
-                int32_t playerCount = TOTAL_PLAYER;
-                initButtonCount = playerCount + 1; // player buttons + accept button
-                initButtons = calloc(initButtonCount, sizeof(sButton*));
-                
-                // Create player buttons
-                for(int32_t i = 0; i < playerCount; i++){
-                    SDL_Rect playRect = {SCREEN_WIDTH/2 - 200 + i*220, SCREEN_HEIGHT/2, 180, 100};
-                    char playerText[10] = "";
-                    snprintf(playerText, 10, "玩家%d", i+1);
-                    initButtons[i] = create_button(playRect, playerText, textColors, bgColors, borderColors, 36, 4);
-                }
-                
-                // Create accept button
-                SDL_Rect acceptRect = {SCREEN_WIDTH/2 - 50, SCREEN_HEIGHT - 200, 100, 40};
-                initButtons[playerCount] = create_button(acceptRect, "確認", textColors, bgColors, borderColors, 24, 2);
-                
-                // Initialize confirm dialog buttons (will be created when needed)
-                confirmButtonCount = 2;
-                confirmButtons = calloc(confirmButtonCount, sizeof(sButton*));
-                SDL_Rect confirmRect = {SCREEN_WIDTH/2 - 80, SCREEN_HEIGHT/2 + 200, 70, 40};
-                confirmButtons[0] = create_button(confirmRect, "確認", textColors, bgColors, borderColors, 20, 2);
-                SDL_Rect cancelRect = {SCREEN_WIDTH/2 + 10, SCREEN_HEIGHT/2 + 200, 70, 40};
-                confirmButtons[1] = create_button(cancelRect, "取消", textColors, bgColors, borderColors, 20, 2);
+        case GAME_INIT_BOT_SELECT: {
+            int32_t playerCount = TOTAL_PLAYER;
+            initButtonCount = playerCount + 1; // player buttons + accept button
+            initButtons = calloc(initButtonCount, sizeof(sButton*));
+            
+            // Create player buttons
+            for(int32_t i = 0; i < playerCount; i++){
+                SDL_Rect playRect = {SCREEN_WIDTH/2 - 200 + i*220, SCREEN_HEIGHT/2, 180, 100};
+                char playerText[10] = "";
+                snprintf(playerText, 10, "玩家%d", i+1);
+                initButtons[i] = create_button(playRect, playerText, textColors, bgColors, borderColors, 36, 4);
             }
+            
+            // Create accept button
+            SDL_Rect acceptRect = {SCREEN_WIDTH/2 - 50, SCREEN_HEIGHT - 200, 100, 40};
+            initButtons[playerCount] = create_button(acceptRect, "確認", textColors, bgColors, borderColors, 24, 2);
+            
+            // Initialize confirm dialog buttons (will be created when needed)
+            confirmButtonCount = 2;
+            confirmButtons = calloc(confirmButtonCount, sizeof(sButton*));
+            SDL_Rect confirmRect = {SCREEN_WIDTH/2 - 80, SCREEN_HEIGHT/2 + 200, 70, 40};
+            confirmButtons[0] = create_button(confirmRect, "確認", textColors, bgColors, borderColors, 20, 2);
+            SDL_Rect cancelRect = {SCREEN_WIDTH/2 + 10, SCREEN_HEIGHT/2 + 200, 70, 40};
+            confirmButtons[1] = create_button(cancelRect, "取消", textColors, bgColors, borderColors, 20, 2);
+        }
             break;
             
+        case GAME_INIT_CHARACTER_SELECT: {
+            int32_t playerCount = TOTAL_PLAYER;
+            int32_t botCount = 0;
+            for(int32_t i = 0; i < playerCount; i++){
+                game.players[i].character = -1;
+                if(game.players[i].isBOT){
+                    botCount++;
+                }
+            }
+            if(botCount == playerCount){
+                game_init();
+                change_state(GAME_PLAY);
+                return;
+            }
+
+            stateComponent.characterSelect = calloc(1, sizeof(sCharacterSelect));
+            stateComponent.characterSelect->showCharacterInfo = -1;
+            stateComponent.characterSelect->showWarningDialog = false;
+
+            for(int32_t i = 0; i < SELECTABLE_CHARACTER_COUNT; i++){
+                // 300 ~ 1000
+                SDL_Rect buttonRect = {250 + (900/SELECTABLE_CHARACTER_COUNT)*i, 220, 900/SELECTABLE_CHARACTER_COUNT-10, 50};
+                stateComponent.characterSelect->ppShowInfoButton[i] = create_button(buttonRect, "角色資訊", textColors, bgColors, borderColors, 20, 2);
+
+                buttonRect.h = 80;
+                buttonRect.y += 80;
+
+                SDL_Color textColorsCH[] = {white, white, black, gray2};
+                SDL_Color bgColorsCH[] = {gray1, gray2, lightblue1, gray1};
+                SDL_Color borderColorsCH[] = {white, white, white, gray2};
+                for(int32_t j = 0; j < playerCount; j++){
+                    stateComponent.characterSelect->pppPlayerSelect[j][i] = create_button(buttonRect, "選擇", textColorsCH, bgColorsCH, borderColorsCH, 20, 4);
+                    buttonRect.y += 100;
+                }
+            }
+            SDL_Rect acceptRect = {SCREEN_WIDTH/2 - 50, SCREEN_HEIGHT - 100, 100, 40};
+            stateComponent.characterSelect->pAcceptButton = create_button(acceptRect, "確認", textColors, bgColors, borderColors, 24, 2);
+        }
+            break;
         case GAME_PLAY:
         case GAME_OVER:
         default:
@@ -163,7 +224,7 @@ void close_ui() {
     SDL_Quit();
 }
 
-void game_menu(){
+void game_menu_ui(){
     bool isHoveringButton = false;
     for (int32_t i = 0; i < menuButtonCount; i++) {
         if (mouse_in_button(menuButtons[i])) {
@@ -187,7 +248,7 @@ void game_menu(){
         else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
             if (mouse_in_button(menuButtons[0])) { // start1v1Button
                 game.playerMode = 0;
-                change_state(GAME_INIT);
+                change_state(GAME_INIT_BOT_SELECT);
                 return;
             } 
             else if (mouse_in_button(menuButtons[1])) { // exitButton
@@ -212,7 +273,7 @@ void game_menu(){
     SDL_RenderPresent(uiBase.renderer);
 }
 
-void game_init(){
+void game_init_bot_select_ui(){
     int32_t playerCount = TOTAL_PLAYER;
     
     bool isHoveringButton = false;
@@ -249,7 +310,7 @@ void game_init(){
             if(showConfirmDialog) {
                 if(mouse_in_button(confirmButtons[0])) { // confirm button
                     showConfirmDialog = false;
-                    change_state(GAME_PLAY);
+                    change_state(GAME_INIT_CHARACTER_SELECT);
                     return;
                 }
                 else if(mouse_in_button(confirmButtons[1])) { // cancel button
@@ -275,7 +336,8 @@ void game_init(){
     SDL_RenderClear(uiBase.renderer);
 
     draw_text_center("選擇機器人玩家", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 200, white, 40);  
-    draw_text_center("遊玩順序按照玩家編號，玩家1為先手", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 150, white, 40);
+    draw_text_center("遊玩順序按照玩家編號，玩家1為先手", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 150, white, 20);
+    draw_text_center("選取到的為機器人玩家，可以沒有機器人或全為機器人", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 120, white, 20);
 
     // Draw player buttons
     for(int32_t i = 0; i < playerCount; i++){
@@ -298,8 +360,8 @@ void game_init(){
         SDL_RenderFillRect(uiBase.renderer, &overlay);
         
         // 對話框背景
-        SDL_SetRenderDrawColor(uiBase.renderer, 64, 64, 64, 255);
         SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 - 100, 400, 200};
+        SDL_SetRenderDrawColor(uiBase.renderer, 64, 64, 64, 255);
         SDL_RenderFillRect(uiBase.renderer, &dialogRect);
         SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
         SDL_RenderDrawRect(uiBase.renderer, &dialogRect);
@@ -311,13 +373,13 @@ void game_init(){
         }
         
         // 顯示確認訊息
-        draw_text_center("確認開始遊戲？", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 50, white, 24);
+        draw_text_center("確定選好了？", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 35, white, 30);
         
         if(botCount == 0) {
-            draw_text_center("沒有機器人", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 20, white, 20);
+            draw_text_center("沒有機器人", SCREEN_WIDTH/2, SCREEN_HEIGHT/2+5, white, 30);
         }
         else if(botCount == playerCount) {
-            draw_text_center("全部為機器人", SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 20, white, 20);
+            draw_text_center("全部為機器人", SCREEN_WIDTH/2, SCREEN_HEIGHT/2+5, white, 30);
         }
         else {
             char botInfo[100] = "機器人玩家：";
@@ -328,7 +390,7 @@ void game_init(){
                     strcat(botInfo, playerNum);
                 }
             }
-            draw_text_center(botInfo, SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 20, white, 20);
+            draw_text_center(botInfo, SCREEN_WIDTH/2, SCREEN_HEIGHT/2+5, white, 30);
         }
         
         // 繪製確認對話框按鈕
@@ -341,7 +403,189 @@ void game_init(){
     SDL_RenderPresent(uiBase.renderer);
 }
 
-void game_play(){
+void game_init_character_select_ui(){
+    SDL_Event event;
+    int32_t playerCount = TOTAL_PLAYER;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) {
+            running = 0;
+            return;
+        }
+        else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT){
+            if(stateComponent.characterSelect->showWarningDialog) {
+                // 點擊警告視窗外區域關閉視窗
+                int mouseX, mouseY;
+                SDL_GetMouseState(&mouseX, &mouseY);
+                SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 - 100, 400, 200};
+                
+                if (!(mouseX >= dialogRect.x && mouseX < dialogRect.x + dialogRect.w &&
+                      mouseY >= dialogRect.y && mouseY < dialogRect.y + dialogRect.h)) {
+                    stateComponent.characterSelect->showWarningDialog = false;
+                }
+            }
+            else if(stateComponent.characterSelect->showCharacterInfo != -1){
+                // 點擊浮空視窗外區域關閉視窗
+                int mouseX, mouseY;
+                SDL_GetMouseState(&mouseX, &mouseY);
+                SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 300, SCREEN_HEIGHT/2 - 200, 600, 400};
+                
+                if (!(mouseX >= dialogRect.x && mouseX < dialogRect.x + dialogRect.w &&
+                      mouseY >= dialogRect.y && mouseY < dialogRect.y + dialogRect.h)) {
+                    stateComponent.characterSelect->showCharacterInfo = -1;
+                }
+            }
+            else{
+                if(mouse_in_button(stateComponent.characterSelect->pAcceptButton)){
+                    // 檢查是否有重複選擇的角色
+                    bool hasDuplicate = false;
+                    for(int32_t i = 0; i < playerCount && !hasDuplicate; i++){
+                        if(game.players[i].character != -1) {
+                            for(int32_t j = i + 1; j < playerCount; j++){
+                                if(game.players[j].character == game.players[i].character) {
+                                    hasDuplicate = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if(hasDuplicate) {
+                        stateComponent.characterSelect->showWarningDialog = true;
+                    }
+                    else {
+                        game_init();
+                        change_state(GAME_PLAY);
+                        return;
+                    }
+                }
+                for(int32_t i = 0; i < SELECTABLE_CHARACTER_COUNT; i++){
+                    if(mouse_in_button(stateComponent.characterSelect->ppShowInfoButton[i])){
+                        stateComponent.characterSelect->showCharacterInfo = i;
+                        break;
+                    }
+                    for(int32_t j = 0; j < playerCount ; j++){
+                        if(mouse_in_button(stateComponent.characterSelect->pppPlayerSelect[j][i])){
+                            game.players[j].character = selectable_characters[i];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    SDL_SetRenderDrawColor(uiBase.renderer, 32, 32, 32, 255);
+    SDL_RenderClear(uiBase.renderer);
+
+    char playerText[10];
+    for(int32_t i = 0; i < playerCount ; i++){
+        snprintf(playerText, 10, "玩家%d", i+1);
+        draw_text(playerText, 150, 320+100*i, white, 30);
+    }
+
+    for(int32_t i = 0; i < SELECTABLE_CHARACTER_COUNT; i++){
+        sCharacterInfo nowch = get_character_info(selectable_characters[i]);
+        int32_t col_width = 900/SELECTABLE_CHARACTER_COUNT;
+        draw_text_center(nowch.name, 250+(col_width-10)/2 + col_width*i, 170, white, 30);
+        if(mouse_in_button(stateComponent.characterSelect->ppShowInfoButton[i])){
+            draw_button(stateComponent.characterSelect->ppShowInfoButton[i], 1);
+        }
+        else{
+            draw_button(stateComponent.characterSelect->ppShowInfoButton[i], 0);
+        }
+        
+        for(int32_t j = 0; j < playerCount ; j++){
+            if(game.players[j].isBOT){
+                draw_button(stateComponent.characterSelect->pppPlayerSelect[j][i], 3);
+            }
+            else if(game.players[j].character == selectable_characters[i]){
+                draw_button(stateComponent.characterSelect->pppPlayerSelect[j][i], 2);
+            }
+            else if(mouse_in_button(stateComponent.characterSelect->pppPlayerSelect[j][i])){
+                draw_button(stateComponent.characterSelect->pppPlayerSelect[j][i], 1);
+            }
+            else{
+                draw_button(stateComponent.characterSelect->pppPlayerSelect[j][i], 0);
+            }
+        }
+    }
+    if(mouse_in_button(stateComponent.characterSelect->pAcceptButton)){
+        draw_button(stateComponent.characterSelect->pAcceptButton, 1);
+    }
+    else{
+        draw_button(stateComponent.characterSelect->pAcceptButton, 0);
+    }
+
+    // 顯示警告對話框
+    if(stateComponent.characterSelect->showWarningDialog) {
+        // 半透明背景覆蓋層
+        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+        SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+        SDL_RenderFillRect(uiBase.renderer, &overlay);
+        
+        // 警告視窗背景
+        SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 - 100, 400, 200};
+        SDL_SetRenderDrawColor(uiBase.renderer, 64, 64, 64, 255);
+        SDL_RenderFillRect(uiBase.renderer, &dialogRect);
+        SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+        SDL_RenderDrawRect(uiBase.renderer, &dialogRect);
+        
+        // 顯示警告訊息
+        int32_t centerX = SCREEN_WIDTH/2;
+        int32_t centerY = SCREEN_HEIGHT/2;
+        
+        draw_text_center("警告", centerX, centerY - 50, white, 36);
+        draw_text_center("不能選擇相同角色！", centerX, centerY - 10, white, 28);
+        draw_text_center("請重新選擇", centerX, centerY + 30, white, 24);
+        
+        // 提示文字
+        draw_text_center("點擊視窗外區域關閉", centerX, centerY + 70, lightblue1, 20);
+    }
+
+    // 顯示角色資訊浮空視窗
+    if(stateComponent.characterSelect->showCharacterInfo != -1) {
+        // 半透明背景覆蓋層
+        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+        SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+        SDL_RenderFillRect(uiBase.renderer, &overlay);
+        
+        // 浮空視窗背景
+        SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 300, SCREEN_HEIGHT/2 - 200, 600, 400};
+        SDL_SetRenderDrawColor(uiBase.renderer, 64, 64, 64, 255);
+        SDL_RenderFillRect(uiBase.renderer, &dialogRect);
+        SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+        SDL_RenderDrawRect(uiBase.renderer, &dialogRect);
+        
+        // 獲取角色資訊
+        sCharacterInfo charInfo = get_character_info(selectable_characters[stateComponent.characterSelect->showCharacterInfo]);
+        
+        // 顯示角色資訊
+        int32_t centerX = SCREEN_WIDTH/2;
+        int32_t startY = SCREEN_HEIGHT/2 - 150;
+
+        char infoText[200];
+        snprintf(infoText, 200, "%s", charInfo.name);
+        draw_text_center(infoText, centerX, startY, white, 36);
+        
+        snprintf(infoText, 200, "說明：%s", charInfo.description);
+        draw_text_center(infoText, centerX, startY + 100, white, 24);
+        
+        snprintf(infoText, 200, "生命上限：%2d", charInfo.maxlife);
+        draw_text_center(infoText, centerX, startY + 140, white, 24);
+        
+        snprintf(infoText, 200, "護盾上限：%2d", charInfo.maxdefense);
+        draw_text_center(infoText, centerX, startY + 180, white, 24);
+        
+        snprintf(infoText, 200, "必殺閥值：%2d", charInfo.ultimate_threshold);
+        draw_text_center(infoText, centerX, startY + 220, white, 24);
+        
+        // 提示文字
+        draw_text_center("點擊視窗外區域關閉", centerX, startY + 300, lightblue1, 20);
+    }
+
+    SDL_RenderPresent(uiBase.renderer);
+}
+
+void game_play_ui(){
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
@@ -358,7 +602,7 @@ void game_play(){
     SDL_RenderPresent(uiBase.renderer);
 }
 
-void game_over(){
+void game_over_ui(){
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {

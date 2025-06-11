@@ -21,16 +21,19 @@ int main(int argc, char **argv) {
     running = 1;
     while (running) {
         if(nowState == GAME_MENU){
-            game_menu();
+            game_menu_ui();
         }
-        else if(nowState == GAME_INIT){
-            game_init();
+        else if(nowState == GAME_INIT_BOT_SELECT){
+            game_init_bot_select_ui();
+        }
+        else if(nowState == GAME_INIT_CHARACTER_SELECT){
+            game_init_character_select_ui();
         }
         else if(nowState == GAME_PLAY){
-            game_play();
+            game_play_ui();
         }
         else{
-            game_over();
+            game_over_ui();
         }
     }
 

@@ -8,12 +8,13 @@
 
 typedef enum _gameState{
     GAME_MENU = 0,
-    GAME_INIT,
+    GAME_INIT_BOT_SELECT,
+    GAME_INIT_CHARACTER_SELECT,
     GAME_PLAY,
     GAME_OVER
 } gameState;
 
-void init_game();
+void game_init();
 void init_character(sPlayer* pPlayer);
 void init_red_hood(sPlayer* pPlayer);
 

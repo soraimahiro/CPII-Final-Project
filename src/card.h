@@ -33,17 +33,19 @@ typedef struct {
     uint8_t last_for_turns;
 } Card;
 
+const Card* getCardData(CardID id);
+void shuffle(vector* v);
+
+// character
 typedef struct {
     CharacterID character_id;
     const char* name;
     const char* description;
-    int health;
-    int shield_max;
-    int ultimate_threshold;
-} CharacterInfo;
+    uint8_t maxlife;
+    uint8_t maxdefense;
+    uint8_t ultimate_threshold;
+} sCharacterInfo;
 
-const Card* getCardData(CardID id);
-void shuffle(vector* v);
-CharacterInfo get_character_info(CharacterID id)
+sCharacterInfo get_character_info(CharacterID id);
 #endif
 
