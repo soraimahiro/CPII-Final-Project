@@ -5,6 +5,7 @@
 #include "ui_stage.h"
 #include "ui_component.h"
 #include "architecture.h"
+#include <time.h>
 
 sGame game;
 sUiBase uiBase;
@@ -12,6 +13,12 @@ gameState nowState = GAME_MENU;
 bool running = 0;
 
 int8_t winner = 0;
+time_t game_start_time = 0;
+time_t game_end_time = 0;
+
+// 遊戲統計全域變數
+int32_t total_turns = 0;           // 總回合數
+int32_t game_duration_seconds = 0; // 遊戲時長（秒）
 
 int main(int argc, char **argv) {
 
@@ -30,9 +37,18 @@ int main(int argc, char **argv) {
             game_init_character_select_ui();
         }
         else if(nowState == GAME_PLAY){
+            // 記錄遊戲開始時間
+            if(game_start_time == 0) {
+                game_start_time = time(NULL);
+            }
             game_play_ui();
         }
         else{
+            // 記錄遊戲結束時間
+            if(game_end_time == 0) {
+                game_end_time = time(NULL);
+                game_duration_seconds = (int32_t)(game_end_time - game_start_time);
+            }
             game_over_ui();
         }
     }

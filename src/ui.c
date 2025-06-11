@@ -4,6 +4,9 @@ extern sGame game;
 extern sUiBase uiBase;
 extern gameState nowState;
 extern bool running;
+extern int8_t winner;
+extern int32_t total_turns;           // 使用 main.c 中的全域變數
+extern int32_t game_duration_seconds; // 使用 main.c 中的全域變數
 
 const SDL_Color white = {255, 255, 255, 255};
 const SDL_Color black = {0, 0, 0, 255};
@@ -604,17 +607,113 @@ void game_play_ui(){
 
 void game_over_ui(){
     SDL_Event event;
+    
+    // 檢查是否有按鈕需要處理滑鼠事件
+    bool isHoveringButton = false;
+    
+    // 創建按鈕（如果還沒創建）
+    if(menuButtons == NULL) {
+        menuButtonCount = 2;
+        menuButtons = calloc(menuButtonCount, sizeof(sButton*));
+        
+        SDL_Color textColors[] = {white, white, black, black};
+        SDL_Color bgColors[] = {gray1, gray2, lightblue1, lightblue2};
+        SDL_Color borderColors[] = {white, white, white, white};
+        
+        // 重新開始按鈕
+        SDL_Rect restartButtonRect = {SCREEN_WIDTH/2 - 120, SCREEN_HEIGHT - 120, 100, 50};
+        menuButtons[0] = create_button(restartButtonRect, "重新開始", textColors, bgColors, borderColors, 20, 2);
+        
+        // 回主選單按鈕
+        SDL_Rect mainMenuButtonRect = {SCREEN_WIDTH/2 + 20, SCREEN_HEIGHT - 120, 100, 50};
+        menuButtons[1] = create_button(mainMenuButtonRect, "回主選單", textColors, bgColors, borderColors, 20, 2);
+    }
+    
+    // 檢查滑鼠懸停
+    for (int32_t i = 0; i < menuButtonCount; i++) {
+        if (mouse_in_button(menuButtons[i])) {
+            isHoveringButton = true;
+            break;
+        }
+    }
+    
+    if (isHoveringButton) {
+        SDL_SetCursor(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND));
+    } else {
+        SDL_SetCursor(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW));
+    }
+    
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             running = 0;
         }
+        else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+            if (mouse_in_button(menuButtons[0])) { // 重新開始
+                // 重置遊戲統計數據
+                extern time_t game_start_time, game_end_time;
+                game_start_time = 0;
+                game_end_time = 0;
+                total_turns = 0;
+                game_duration_seconds = 0;
+                winner = 0;
+                
+                change_state(GAME_INIT_CHARACTER_SELECT);
+                return;
+            }
+            else if (mouse_in_button(menuButtons[1])) { // 回主選單
+                // 重置遊戲統計數據
+                extern time_t game_start_time, game_end_time;
+                game_start_time = 0;
+                game_end_time = 0;
+                total_turns = 0;
+                game_duration_seconds = 0;
+                winner = 0;
+                
+                change_state(GAME_MENU);
+                return;
+            }
+        }
     }
     
+    // 繪製背景
     SDL_SetRenderDrawColor(uiBase.renderer, 32, 32, 32, 255);
     SDL_RenderClear(uiBase.renderer);
-
-    SDL_Color white = {255, 255, 255, 255};
-    draw_text_center("xxx win", SCREEN_WIDTH/2, SCREEN_HEIGHT/2, white, 36);
+    
+    // 遊戲結束標題 - 更大更居中
+    int32_t startY = SCREEN_HEIGHT/2 - 150;
+    draw_text_center("遊戲結束", SCREEN_WIDTH/2, startY, white, 64);
+    
+    startY += 120;
+    
+    // 顯示勝負結果 - 更大更突出
+    char resultText[200];
+    int32_t playerCount = (game.playerMode == 0) ? 2 : 4;
+    
+    for(int32_t i = 0; i < playerCount; i++) {
+        sCharacterInfo charInfo = get_character_info(game.players[i].character);
+        if(game.players[i].team == winner) {
+            snprintf(resultText, 200, "玩家%d %s 勝利！", i+1, charInfo.name);
+            draw_text_center(resultText, SCREEN_WIDTH/2, startY, lightblue1, 40);
+        } else {
+            snprintf(resultText, 200, "玩家%d %s 輸了", i+1, charInfo.name);
+            draw_text_center(resultText, SCREEN_WIDTH/2, startY, gray2, 32);
+        }
+        startY += 50;
+    }
+    
+    startY += 60;
+    
+    // 遊戲統計資訊 - 一行顯示，時間格式為 HH:MM
+    int32_t hours = game_duration_seconds / 3600;
+    int32_t minutes = (game_duration_seconds % 3600) / 60;
+    snprintf(resultText, 200, "遊戲時長：%02d:%02d    回合數：%d", hours, minutes, total_turns);
+    draw_text_center(resultText, SCREEN_WIDTH/2, startY, white, 28);
+    
+    // 繪製按鈕
+    for (int32_t i = 0; i < menuButtonCount; i++) {
+        int8_t buttonType = mouse_in_button(menuButtons[i]) ? 1 : 0;
+        draw_button(menuButtons[i], buttonType);
+    }
 
     SDL_RenderPresent(uiBase.renderer);
 }
