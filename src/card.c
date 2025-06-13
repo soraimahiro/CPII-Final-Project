@@ -13,7 +13,7 @@ static const Card cardsData[CARD_TOTAL_COUNT] = {
     { 7,  "LV1移動牌", TYPE_MOVE,    1, 0, 0, 0, 0, "移動力1", 0, 0 },
     { 8,  "LV2移動牌", TYPE_MOVE,    2, 0, 0, 0, 0, "移動力2", 0, 0 },
     { 9,  "LV3移動牌", TYPE_MOVE,    3, 0, 0, 0, 0, "移動力3", 0, 0 },
-    { 10, "通用牌",    TYPE_BASIC,   1, 0, 0, 0, 0, "可當作LV1基本牌使用", 0, 0 },
+    { 10, "通用牌",    TYPE_BASIC,   1, 0, 1, 1, 1, "可當作LV1基本牌使用", 0, 0 },
     // 小紅帽 (ID 11~22)
     { 11, "快速射擊",   TYPE_ATTACK,  1, 0, 1, 1, 0, "射程1 傷害1+O", 0, 0 },
     { 12, "精準射擊",   TYPE_ATTACK,  2, 2, 2, 2, 0, "射程2 傷害2+O", 0, 0 },
@@ -199,11 +199,12 @@ static const Card cardsData[CARD_TOTAL_COUNT] = {
 };
 
 const Card* getCardData(CardID id) {
-    if (id >= 0 && id < CARD_TOTAL_COUNT) {
-        printf("%s\n", cardsData[id - OFFSET].name);
-        return &cardsData[id];
+    for (int i = 0; i < CARD_TOTAL_COUNT; i++) {
+        if (cardsData[i].id == id) {
+            return &cardsData[i];
+        }
     }
-    else return NULL;
+    return NULL;
 }
 
 void shuffle(vector* v) {
