@@ -2,14 +2,13 @@
 
 extern sGame game;
 extern int8_t winner;
-
-#define TOTAL_PLAYER game.playerMode == 0 ? 2 : 4
-
+extern int32_t total_turns; // 使用 main.c 中的全域變數
 
 int check_game_winner(){
     int32_t team1_life = 0;
     int32_t team2_life = 0;
-    for(int32_t i = 0; i < TOTAL_PLAYER; i++){
+    int32_t playerCount = TOTAL_PLAYER;
+    for(int32_t i = 0; i < playerCount; i++){
         if(game.players[i].team == 1){
             team1_life += game.players[i].life;
         }
@@ -17,6 +16,7 @@ int check_game_winner(){
             team2_life += game.players[i].life;
         }
     }
+    
     if(team1_life <= 0){
         winner = 2;
         return 1;
@@ -31,6 +31,11 @@ int check_game_winner(){
 int beginning_phase(){
     sPlayer *pCurrentPlayer = &(game.players[game.now_turn_player_id]);
     
+    // 統計回合數 (只在玩家1的回合開始時增加，避免重複計算)
+    if(game.now_turn_player_id == 0) {
+        total_turns++;
+    }
+    
     // 處理小紅帽護盾持續效果
     if(pCurrentPlayer->character == 0) { // Little Red Riding Hood
         if(pCurrentPlayer->defense > 0) {
@@ -38,11 +43,6 @@ int beginning_phase(){
             // 根據防禦技能等級決定射程和傷害
             int32_t damage = 0;
             int32_t range = 0;
-            
-            // 檢查上一回合使用的防禦技能
-            // 等級一 能量護盾: 射程1 傷害2
-            // 等級二 電流護盾: 射程2 傷害4  
-            // 等級三 終極護盾: 射程3 傷害6
             
             // 簡化實現：假設使用了護盾技能，檢查防禦值來判斷等級
             if(pCurrentPlayer->defense >= 3) {
@@ -58,7 +58,8 @@ int beginning_phase(){
             
             if(damage > 0) {
                 // 對射程內的敵人造成傷害
-                for(int32_t i = 0; i < TOTAL_PLAYER; i++) {
+                int32_t playerCount = TOTAL_PLAYER;
+                for(int32_t i = 0; i < playerCount; i++) {
                     if(game.players[i].team != pCurrentPlayer->team) {
                         int32_t distance = abs(game.players[i].locate[0] - pCurrentPlayer->locate[0]) + 
                                          abs(game.players[i].locate[1] - pCurrentPlayer->locate[1]);
@@ -102,8 +103,11 @@ int activation_phase(){
         switch (active) {
             case 1:
                 result = focus();
+                break;
         }
     } while(result != 0 && !winner);
+    
+    return 0; // 加入返回值
 }
 
 int ending_phase(){
@@ -115,6 +119,8 @@ int ending_phase(){
             popbackVector(&(game.players[i].hand));
         }
     }
+    
+    return 0; // 加入返回值
 }
 
 // action
@@ -134,8 +140,9 @@ int attack_action(){
     int32_t attackTarget = -1;
     sPlayer *pNowTurnPlayer = &(game.players[game.now_turn_player_id]);
     int8_t playerTeam = pNowTurnPlayer->team; 
+    int32_t playerCount = TOTAL_PLAYER;
 
-    for(int32_t i = 0; i < TOTAL_PLAYER; i++){
+    for(int32_t i = 0; i < playerCount; i++){
         if(game.players[i].team != playerTeam && abs(game.players[i].locate[0] - pNowTurnPlayer->locate[0]) == 1){ // 檢查是否有敵人在射程1
             attackTarget = i;
             break;
@@ -145,6 +152,8 @@ int attack_action(){
         printf("沒有對手在射程內\n");
         return 1;
     }
+    
+    return 0; // 加入返回值
 }
 int defense_action();
 int move_action();

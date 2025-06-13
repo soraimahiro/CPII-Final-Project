@@ -4,6 +4,9 @@ extern sGame game;
 extern sUiBase uiBase;
 extern gameState nowState;
 extern bool running;
+extern int8_t winner;
+extern int32_t total_turns;           // 使用 main.c 中的全域變數
+extern int32_t game_duration_seconds; // 使用 main.c 中的全域變數
 
 const SDL_Color white = {255, 255, 255, 255};
 const SDL_Color black = {0, 0, 0, 255};
@@ -137,15 +140,22 @@ void change_state(gameState newState) {
                     botCount++;
                 }
             }
+            
+            // 如果全部都是機器人，直接分配角色後進入play階段
             if(botCount == playerCount){
+                for(int32_t i = 0; i < playerCount; i++){
+                    game.players[i].character = selectable_characters[i % SELECTABLE_CHARACTER_COUNT];
+                }
                 game_init();
                 change_state(GAME_PLAY);
                 return;
             }
 
+            // 創建角色選擇界面
             stateComponent.characterSelect = calloc(1, sizeof(sCharacterSelect));
             stateComponent.characterSelect->showCharacterInfo = -1;
             stateComponent.characterSelect->showWarningDialog = false;
+            
 
             for(int32_t i = 0; i < SELECTABLE_CHARACTER_COUNT; i++){
                 // 300 ~ 1000
@@ -466,7 +476,51 @@ void game_init_character_select_ui(){
             }
             else{
                 if(mouse_in_button(stateComponent.characterSelect->pAcceptButton)){
-                    // 檢查是否有重複選擇的角色
+                    // 檢查是否有人類玩家未選擇角色
+                    bool hasUnselectedPlayer = false;
+                    for(int32_t i = 0; i < playerCount; i++){
+                        if(!game.players[i].isBOT && game.players[i].character == -1) {
+                            hasUnselectedPlayer = true;
+                            break;
+                        }
+                    }
+                    
+                    if(hasUnselectedPlayer) {
+                        stateComponent.characterSelect->showWarningDialog = true;
+                    }
+                    else {
+                        // 先收集人類玩家已選的角色
+                        bool usedCharacters[SELECTABLE_CHARACTER_COUNT] = {false};
+                        for(int32_t i = 0; i < playerCount; i++){
+                            if(!game.players[i].isBOT && game.players[i].character != -1) {
+                                for(int32_t j = 0; j < SELECTABLE_CHARACTER_COUNT; j++) {
+                                    if(selectable_characters[j] == game.players[i].character) {
+                                        usedCharacters[j] = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 為機器人分配未被使用的角色
+                        int32_t botCharacterIndex = 0;
+                        for(int32_t i = 0; i < playerCount; i++){
+                            if(game.players[i].isBOT){
+                                // 找到下一個未被使用的角色
+                                while(botCharacterIndex < SELECTABLE_CHARACTER_COUNT && usedCharacters[botCharacterIndex]) {
+                                    botCharacterIndex++;
+                                }
+                                
+                                if(botCharacterIndex < SELECTABLE_CHARACTER_COUNT) {
+                                    game.players[i].character = selectable_characters[botCharacterIndex];
+                                    usedCharacters[botCharacterIndex] = true;
+                                    botCharacterIndex++;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 最後檢查是否還有重複（應該不會有了）
                     bool hasDuplicate = false;
                     for(int32_t i = 0; i < playerCount && !hasDuplicate; i++){
                         if(game.players[i].character != -1) {
@@ -483,6 +537,7 @@ void game_init_character_select_ui(){
                         stateComponent.characterSelect->showWarningDialog = true;
                     }
                     else {
+                        // 只在這裡調用一次 game_init()
                         game_init();
                         change_state(GAME_PLAY);
                         return;
@@ -564,8 +619,39 @@ void game_init_character_select_ui(){
         int32_t centerY = SCREEN_HEIGHT/2;
         
         draw_text_center("警告", centerX, centerY - 50, white, 36);
-        draw_text_center("不能選擇相同角色！", centerX, centerY - 10, white, 28);
-        draw_text_center("請重新選擇", centerX, centerY + 30, white, 24);
+        
+        // 檢查是角色重複還是未選擇的問題
+        bool hasUnselectedPlayer = false;
+        bool hasDuplicate = false;
+        
+        for(int32_t i = 0; i < playerCount; i++){
+            if(!game.players[i].isBOT && game.players[i].character == -1) {
+                hasUnselectedPlayer = true;
+                break;
+            }
+        }
+        
+        if(!hasUnselectedPlayer) {
+            for(int32_t i = 0; i < playerCount && !hasDuplicate; i++){
+                if(game.players[i].character != -1) {
+                    for(int32_t j = i + 1; j < playerCount; j++){
+                        if(game.players[j].character == game.players[i].character) {
+                            hasDuplicate = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(hasUnselectedPlayer) {
+            draw_text_center("有玩家尚未選擇角色！", centerX, centerY - 10, white, 28);
+            draw_text_center("請完成角色選擇", centerX, centerY + 30, white, 24);
+        }
+        else if(hasDuplicate) {
+            draw_text_center("不能選擇相同角色！", centerX, centerY - 10, white, 28);
+            draw_text_center("請重新選擇", centerX, centerY + 30, white, 24);
+        }
         
         // 提示文字
         draw_text_center("點擊視窗外區域關閉", centerX, centerY + 70, lightblue1, 20);
@@ -714,17 +800,113 @@ void game_play_ui(){
 
 void game_over_ui(){
     SDL_Event event;
+    
+    // 檢查是否有按鈕需要處理滑鼠事件
+    bool isHoveringButton = false;
+    
+    // 創建按鈕（如果還沒創建）
+    if(menuButtons == NULL) {
+        menuButtonCount = 2;
+        menuButtons = calloc(menuButtonCount, sizeof(sButton*));
+        
+        SDL_Color textColors[] = {white, white, black, black};
+        SDL_Color bgColors[] = {gray1, gray2, lightblue1, lightblue2};
+        SDL_Color borderColors[] = {white, white, white, white};
+        
+        // 重新開始按鈕
+        SDL_Rect restartButtonRect = {SCREEN_WIDTH/2 - 120, SCREEN_HEIGHT - 120, 100, 50};
+        menuButtons[0] = create_button(restartButtonRect, "重新開始", textColors, bgColors, borderColors, 20, 2);
+        
+        // 回主選單按鈕
+        SDL_Rect mainMenuButtonRect = {SCREEN_WIDTH/2 + 20, SCREEN_HEIGHT - 120, 100, 50};
+        menuButtons[1] = create_button(mainMenuButtonRect, "回主選單", textColors, bgColors, borderColors, 20, 2);
+    }
+    
+    // 檢查滑鼠懸停
+    for (int32_t i = 0; i < menuButtonCount; i++) {
+        if (mouse_in_button(menuButtons[i])) {
+            isHoveringButton = true;
+            break;
+        }
+    }
+    
+    if (isHoveringButton) {
+        SDL_SetCursor(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND));
+    } else {
+        SDL_SetCursor(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW));
+    }
+    
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             running = 0;
         }
+        else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+            if (mouse_in_button(menuButtons[0])) { // 重新開始
+                // 重置遊戲統計數據
+                extern time_t game_start_time, game_end_time;
+                game_start_time = 0;
+                game_end_time = 0;
+                total_turns = 0;
+                game_duration_seconds = 0;
+                winner = 0;
+                
+                change_state(GAME_INIT_CHARACTER_SELECT);
+                return;
+            }
+            else if (mouse_in_button(menuButtons[1])) { // 回主選單
+                // 重置遊戲統計數據
+                extern time_t game_start_time, game_end_time;
+                game_start_time = 0;
+                game_end_time = 0;
+                total_turns = 0;
+                game_duration_seconds = 0;
+                winner = 0;
+                
+                change_state(GAME_MENU);
+                return;
+            }
+        }
     }
     
+    // 繪製背景
     SDL_SetRenderDrawColor(uiBase.renderer, 32, 32, 32, 255);
     SDL_RenderClear(uiBase.renderer);
-
-    SDL_Color white = {255, 255, 255, 255};
-    draw_text_center("xxx win", SCREEN_WIDTH/2, SCREEN_HEIGHT/2, white, 36);
+    
+    // 遊戲結束標題 - 更大更居中
+    int32_t startY = SCREEN_HEIGHT/2 - 150;
+    draw_text_center("遊戲結束", SCREEN_WIDTH/2, startY, white, 64);
+    
+    startY += 120;
+    
+    // 顯示勝負結果 - 更大更突出
+    char resultText[200];
+    int32_t playerCount = (game.playerMode == 0) ? 2 : 4;
+    
+    for(int32_t i = 0; i < playerCount; i++) {
+        sCharacterInfo charInfo = get_character_info(game.players[i].character);
+        if(game.players[i].team == winner) {
+            snprintf(resultText, 200, "玩家%d %s 勝利！", i+1, charInfo.name);
+            draw_text_center(resultText, SCREEN_WIDTH/2, startY, lightblue1, 40);
+        } else {
+            snprintf(resultText, 200, "玩家%d %s 輸了", i+1, charInfo.name);
+            draw_text_center(resultText, SCREEN_WIDTH/2, startY, gray2, 32);
+        }
+        startY += 50;
+    }
+    
+    startY += 60;
+    
+    // 遊戲統計資訊 - 一行顯示，時間格式為 HH:MM
+    int32_t hours = game_duration_seconds / 3600;
+    int32_t minutes = (game_duration_seconds % 3600) / 60;
+    snprintf(resultText, 200, "遊戲時長：%02d:%02d    回合數：%d", hours, minutes, total_turns);
+    draw_text_center(resultText, SCREEN_WIDTH/2, startY, white, 28);
+    
+    // 繪製按鈕
+    for (int32_t i = 0; i < menuButtonCount; i++) {
+        int8_t buttonType = mouse_in_button(menuButtons[i]) ? 1 : 0;
+        draw_button(menuButtons[i], buttonType);
+    }
 
     SDL_RenderPresent(uiBase.renderer);
 }

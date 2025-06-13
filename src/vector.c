@@ -25,10 +25,10 @@ void popbackVector(vector* vec) {
 
 int getVectorTop(vector* vec, int32_t* value){
     if (vec == NULL || vec->SIZE == 0) {
-        return -1;
+        return 0;
     }
     *value = vec->array[vec->SIZE - 1];
-    return 0;
+    return 1;
 }
 
 void clearVector(vector* vec) {
