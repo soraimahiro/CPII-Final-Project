@@ -187,6 +187,38 @@ void init_ui() {
         return;
     }
     
+    // 嘗試載入自定義字體
+    uiBase.font = TTF_OpenFont(FONT_PATH, 24);  // 24是默認字體大小
+    
+    // 如果載入失敗，嘗試使用系統字體
+    if (!uiBase.font) {
+        printf("Failed to load custom font: %s\n", TTF_GetError());
+        printf("Trying to load system font...\n");
+        
+        // 嘗試載入系統字體
+        const char* system_fonts[] = {
+            "/System/Library/Fonts/STHeiti Light.ttc",  // macOS 系統字體
+            "/System/Library/Fonts/PingFang.ttc",       // macOS 系統字體
+            "/System/Library/Fonts/AppleGothic.ttf",    // macOS 系統字體
+            "/Library/Fonts/Arial Unicode.ttf",         // 通用字體
+            NULL
+        };
+        
+        for (int i = 0; system_fonts[i] != NULL; i++) {
+            uiBase.font = TTF_OpenFont(system_fonts[i], 24);
+            if (uiBase.font) {
+                printf("Successfully loaded system font: %s\n", system_fonts[i]);
+                break;
+            }
+        }
+        
+        // 如果所有字體都無法載入，輸出錯誤信息
+        if (!uiBase.font) {
+            printf("Failed to load any font! SDL_ttf Error: %s\n", TTF_GetError());
+            return;
+        }
+    }
+    
     uiBase.window = SDL_CreateWindow("Twisted Fables",
                              SDL_WINDOWPOS_CENTERED,
                              SDL_WINDOWPOS_CENTERED,
@@ -203,8 +235,6 @@ void init_ui() {
         printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
         return;
     }
-    
-    uiBase.font = TTF_OpenFont(FONT_PATH, 36);
 }
 
 void close_ui() {
@@ -586,6 +616,9 @@ void game_init_character_select_ui(){
 }
 
 void game_play_ui(){
+    static bool first_render = true;
+    static bool waiting_for_input = false;
+    
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
@@ -593,13 +626,90 @@ void game_play_ui(){
         }
     }
     
+    // First render the UI
     SDL_SetRenderDrawColor(uiBase.renderer, 32, 32, 32, 255);
     SDL_RenderClear(uiBase.renderer);
 
+    // Draw game board
     SDL_Color white = {255, 255, 255, 255};
-    draw_text_center("Play", SCREEN_WIDTH/2, SCREEN_HEIGHT/2, white, 36);
+    SDL_Color gray = {128, 128, 128, 255};
+    
+    // Draw 9x1 grid
+    int grid_size = 60;
+    int start_x = (SCREEN_WIDTH - (grid_size * 9)) / 2;
+    int start_y = (SCREEN_HEIGHT - grid_size) / 2;
+    
+    for (int i = 0; i < 9; i++) {
+        SDL_Rect rect = {
+            start_x + (i * grid_size),
+            start_y,
+            grid_size,
+            grid_size
+        };
+        SDL_SetRenderDrawColor(uiBase.renderer, 64, 64, 64, 255);
+        SDL_RenderFillRect(uiBase.renderer, &rect);
+        SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+        SDL_RenderDrawRect(uiBase.renderer, &rect);
+    }
+    
+    // Draw players
+    for (int i = 0; i < 2; i++) {
+        if (game.players[i].character != -1) {
+            int player_x = start_x + ((game.players[i].locate[0] - 1) * grid_size);
+            int player_y = start_y;
+            
+            SDL_Rect player_rect = {
+                player_x + 10,
+                player_y + 10,
+                grid_size - 20,
+                grid_size - 20
+            };
+            
+            // Draw player circle
+            SDL_SetRenderDrawColor(uiBase.renderer, 
+                i == game.now_turn_player_id ? 255 : 128,  // Current player is brighter
+                i == 0 ? 0 : 255,  // Player 1 is red, Player 2 is blue
+                0,
+                255
+            );
+            SDL_RenderFillRect(uiBase.renderer, &player_rect);
+        }
+    }
+    
+    // Draw player info
+    for (int i = 0; i < 2; i++) {
+        if (game.players[i].character != -1) {
+            char info[100];
+            snprintf(info, 100, "P%d: HP %d/%d DEF %d/%d Energy %d", 
+                i + 1,
+                game.players[i].life,
+                game.players[i].maxlife,
+                game.players[i].defense,
+                game.players[i].maxdefense,
+                game.players[i].energy
+            );
+            draw_text(info, 20, 20 + (i * 30), white, 20);
+        }
+    }
+    
+    // Draw current phase
+    char phase_text[50];
+    snprintf(phase_text, 50, "Current Phase: %s", 
+        game.status == CHOOSE_MOVE ? "Action Phase" : "Other Phase"
+    );
+    draw_text(phase_text, 20, SCREEN_HEIGHT - 40, white, 20);
 
     SDL_RenderPresent(uiBase.renderer);
+    
+    // 修改這裡的邏輯，讓 game_play_logic 能夠持續執行
+    if (waiting_for_input) {
+        printf("\nPress Enter to continue...");
+        getchar();
+        game_play_logic();
+        waiting_for_input = false;  // 重置等待狀態
+    } else {
+        waiting_for_input = true;  // 設置等待狀態，準備下一次執行
+    }
 }
 
 void game_over_ui(){

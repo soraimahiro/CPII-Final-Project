@@ -1,25 +1,33 @@
 #include "game.h"
+<<<<<<< Updated upstream:game.c
+#include "ui.h"
+#include "card_id.h"
+=======
 #include "card.h"
 #include "stage.h"
 #include "ui.h"
 #include "ui_stage.h"
 #include "ui_component.h"
 #include "architecture.h"
+>>>>>>> Stashed changes:src/game.c
 
-void init_game(sGame* pGame) {
-    pGame->playerMode = 0; // 1v1
+void init_game(game* pGame) {
+    int8_t mode;
+    get_init_info(&mode);
+    pGame->playerMode = mode;
 
     pGame->now_turn_player_id = 0;
-}
 
+<<<<<<< Updated upstream:game.c
+=======
 // 設置初始牌堆
 void setup_initial_deck(sPlayer* player) {
     clearVector(&player->deck);
     // 添加基本牌
     for (int i = 0; i < 3; i++) {
         pushbackVector(&player->deck, 1);  // 基本攻擊lv1
-        pushbackVector(&player->deck, 4);  // 基本防禦lv1
-        pushbackVector(&player->deck, 7);  // 基本移動lv1
+        pushbackVector(&player->deck, 2);  // 基本防禦lv1
+        pushbackVector(&player->deck, 3);  // 基本移動lv1
     }
     
     // 添加角色牌
@@ -188,9 +196,10 @@ void game_init() {
     // 4. 設置遊戲狀態
     game.now_turn_player_id = 0;  // 玩家1先攻
     game.status = CHOOSE_MOVE;    // 從選擇移動開始
+>>>>>>> Stashed changes:src/game.c
 }
 
-void init_character(sPlayer* p){
+void init_character(player* p){
     p->hand = initVector();
     p->deck = initVector();
     p->usecards = initVector();
@@ -202,7 +211,7 @@ void init_character(sPlayer* p){
     p->specialDeck = initVector();
 }
 
-void init_red_hood(sPlayer* p) {
+void init_red_hood(player* p) {
     p->maxlife = 30;
     p->life = 30;
     p->defense = 0;
@@ -311,16 +320,14 @@ void handle_attack(sPlayer* attacker, sPlayer* defender) {
         
         // Get the selected card
         int32_t card_id = attacker->hand.array[choice - 1];
-        const Card* card = getCardData(card_id);
         
-        // 檢查是否為攻擊牌或通用牌
-        if (card->type != TYPE_ATTACK && card->type != TYPE_BASIC) {
+        if (!is_basic_card(card_id, TYPE_ATTACK) && card_id != 10) {
             printf("Not an attack card!\n");
             continue;
         }
         
         // Calculate damage and energy
-        int card_value = card->damage;
+        int card_value = get_card_value(card_id);
         total_damage += card_value;
         total_energy += card_value;
         
@@ -385,16 +392,14 @@ void handle_defense(sPlayer* player) {
         
         // Get the selected card
         int32_t card_id = player->hand.array[choice - 1];
-        const Card* card = getCardData(card_id);
         
-        // 檢查是否為防禦牌或通用牌
-        if (card->type != TYPE_DEFENSE && card->type != TYPE_BASIC) {
+        if (!is_basic_card(card_id, TYPE_DEFENSE) && card_id != 10) {
             printf("Not a defense card!\n");
             continue;
         }
         
         // Calculate defense and energy
-        int card_value = card->defense;
+        int card_value = get_card_value(card_id);
         total_defense += card_value;
         total_energy += card_value;
         
@@ -535,8 +540,6 @@ void draw_card(sPlayer* player, int count) {
 void game_play_logic() {
     static bool first_render = true;
     static bool waiting_for_input = true;
-    static bool is_first_turn_player1 = true;  // 用於追蹤第一位玩家的第一回合
-    static bool is_first_turn_player2 = true;  // 用於追蹤第二位玩家的第一回合
     
     // 獲取當前玩家和對手
     sPlayer* current_player = &game.players[game.now_turn_player_id];
@@ -546,23 +549,12 @@ void game_play_logic() {
     
     // 開始階段
     printf("\n=== Start Phase ===\n");
-    // 抽牌
-    if (game.now_turn_player_id == 0) {
-        if (is_first_turn_player1) {
-            printf("First player's first turn: Initial draw already done\n");
-            is_first_turn_player1 = false;
-        } else {
-            printf("Draw 6 cards\n");
-            draw_card(current_player, 6);
-        }
+    // 只有在沒有手牌時才抽牌
+    if (current_player->hand.SIZE == 0) {
+        printf("Draw 6 cards\n");
+        draw_card(current_player, 6);
     } else {
-        if (is_first_turn_player2) {
-            printf("Second player's first turn: Initial draw already done\n");
-            is_first_turn_player2 = false;
-        } else {
-            printf("Draw 6 cards\n");
-            draw_card(current_player, 6);
-        }
+        printf("Already have cards in hand\n");
     }
     
     // 清理階段
@@ -632,7 +624,7 @@ void game_play_logic() {
         }
     }
     
-    // 結束階段
+    // 回合結束階段
     printf("\n=== End Phase ===\n");
     
     // 1. 將使用過的牌移到棄牌堆
@@ -644,27 +636,18 @@ void game_play_logic() {
     }
     printf("Used cards moved to graveyard\n");
     
-    // 2. 將手牌移到棄牌堆
-    while (current_player->hand.SIZE > 0) {
-        int32_t card;
-        getVectorTop(&current_player->hand, &card);
-        pushbackVector(&current_player->graveyard, card);
-        popbackVector(&current_player->hand);
-    }
-    printf("Hand cards moved to graveyard\n");
-    
-    // 3. 重置能量
+    // 2. 重置能量
     current_player->energy = 0;
     printf("Energy reset to 0\n");
     
-    // 4. 切換玩家
+    // 3. 切換玩家
     game.now_turn_player_id = (game.now_turn_player_id + 1) % 2;
     printf("Turn ended. Next player's turn.\n");
     
-    // 5. 重置遊戲狀態
+    // 4. 重置遊戲狀態
     game.status = CHOOSE_MOVE;
     
-    // 6. 重置靜態變數，準備下一個回合
+    // 5. 重置靜態變數，準備下一個回合
     first_render = true;
     waiting_for_input = true;
 }
