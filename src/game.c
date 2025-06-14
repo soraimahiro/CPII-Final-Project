@@ -28,8 +28,9 @@ void setup_initial_deck(sPlayer* player) {
 
 // 設置技能牌堆
 void setup_skill_decks(sPlayer* player) {
-    int base_id = (player->character) * 10 + 1;  // 角色基本牌起始ID
-    int meta_base_id = (player->character) * 4 + 169;  // 蛻變牌起始ID (從169開始，每個角色4張)
+    int base_id = player->character * 12 + 11;  // 角色基本牌起始ID
+    int meta_base_id = player->character * 4 + 135;  // 蛻變牌起始ID
+    if (player->character >= 7) meta_base_id += 2;
     
     // 攻擊技能牌堆
     for (int i = 0; i < 2; i++) {
@@ -74,7 +75,7 @@ void setup_skill_decks(sPlayer* player) {
 
 // 設置必殺牌
 void setup_ultimate_cards(sPlayer* player) {
-    int base_id = (player->character) * 10 + 1;
+    int base_id = (player->character) * 12 + 11;
     for (int i = 0; i < 3; i++) {
         pushbackVector(&player->specialDeck, base_id + 9 + i);  // 3張必殺牌
     }
@@ -422,6 +423,23 @@ void print_hand_cards(sPlayer* player) {
     }
 }
 
+void attack(sPlayer* defender, int total_damage) {
+    int remaining_damage = 0;
+    if (defender->defense > 0) {
+        if (defender->defense >= total_damage) {
+            defender->defense -= total_damage;
+        } else {
+            remaining_damage = total_damage - defender->defense;
+            defender->defense = 0;
+            defender->life = (defender->life > remaining_damage) ? 
+                            defender->life - remaining_damage : 0;
+        }
+    } else {
+        defender->life = (defender->life > total_damage) ? 
+                        defender->life - total_damage : 0;
+    }
+}
+
 // Attack action
 void handle_attack(sPlayer* attacker, sPlayer* defender) {
     printf("\nAttack Action:\n");
@@ -471,21 +489,7 @@ void handle_attack(sPlayer* attacker, sPlayer* defender) {
     // TODO: Hua Mu-Lan
 
     if (total_damage > 0) {
-        // Apply damage
-        if (defender->defense > 0) {
-            if (defender->defense >= total_damage) {
-                defender->defense -= total_damage;
-            } else {
-                int remaining_damage = total_damage - defender->defense;
-                defender->defense = 0;
-                defender->life = (defender->life > remaining_damage) ? 
-                               defender->life - remaining_damage : 0;
-            }
-        } else {
-            defender->life = (defender->life > total_damage) ? 
-                           defender->life - total_damage : 0;
-        }
-        
+        attack(defender, total_damage);
         // Add energy
         attacker->energy += total_energy;
         if (attacker->energy > 25) attacker->energy = 25;
