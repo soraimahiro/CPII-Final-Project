@@ -1,3 +1,4 @@
+#include "skills.h"
 #include "game.h"
 #include "card.h"
 #include "stage.h"
@@ -700,10 +701,23 @@ void handle_skills(sPlayer* attacker, sPlayer* defender) {
         
    
     // TODO: Hua Mu-Lan
-
-    switch (skill_card_id) {
-        // case SKILL: skill01(skill_card, basic_card->level);
+    
+    if (skill_card_id <= 19) {
+        handle_redhood_skills(skill_card, basic_card->level);
     }
+    else if (skill_card_id <= 31) {
+        handle_snowwhite_skills(skill_card, basic_card->level);
+    }
+    else if (skill_card_id <= 43) {
+        handle_sleepingbeauty_skills(skill_card, basic_card->level);
+    }
+    else if (skill_card_id <= 67) {
+        handle_mulan_skills(skill_card, basic_card->level);
+    }
+    else if (skill_card_id <= 79) {
+        handle_kaguya_skills(skill_card, basic_card->level);
+    }
+    else handle_matchgirl_skills(skill_card, basic_card->level);
 
 }
 
