@@ -28,8 +28,8 @@ void setup_initial_deck(sPlayer* player) {
 
 // 設置技能牌堆
 void setup_skill_decks(sPlayer* player) {
-    int base_id = (player->character - 1) * 10 + 1;  // 角色基本牌起始ID
-    int meta_base_id = (player->character - 1) * 4 + 169;  // 蛻變牌起始ID (從169開始，每個角色4張)
+    int base_id = (player->character) * 10 + 1;  // 角色基本牌起始ID
+    int meta_base_id = (player->character) * 4 + 169;  // 蛻變牌起始ID (從169開始，每個角色4張)
     
     // 攻擊技能牌堆
     for (int i = 0; i < 2; i++) {
@@ -74,7 +74,7 @@ void setup_skill_decks(sPlayer* player) {
 
 // 設置必殺牌
 void setup_ultimate_cards(sPlayer* player) {
-    int base_id = (player->character - 1) * 10 + 1;
+    int base_id = (player->character) * 10 + 1;
     for (int i = 0; i < 3; i++) {
         pushbackVector(&player->specialDeck, base_id + 9 + i);  // 3張必殺牌
     }
