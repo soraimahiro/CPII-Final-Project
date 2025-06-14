@@ -24,8 +24,9 @@ typedef struct {
     sButton *settingsButton;    // Settings button
     
     // Deck/Graveyard buttons
-    sButton *opponentDeckButton;
+    sButton *opponentDeckButton;    // 恢復對手牌庫按鈕
     sButton *opponentGraveButton;
+    sButton *opponentHandButton;    // 對手手牌按鈕
     sButton *opponentMetamorphButton;
     sButton *myDeckButton;
     sButton *myGraveButton;
@@ -43,6 +44,40 @@ typedef struct {
     bool focusMode;
     int32_t focusSelectedHand;
     int32_t focusSelectedGrave;
+    
+    // New popup window states
+    bool showShopPopup;
+    // 移除 showOpponentDeckPopup
+    bool showOpponentGravePopup;
+    bool showMyDeckPopup;
+    bool showMyGravePopup;
+    
+    // Skill and special deck popup states
+    bool showOpponentSpecialPopup;
+    bool showOpponentAttackSkillPopup;
+    bool showOpponentDefenseSkillPopup;
+    bool showOpponentMoveSkillPopup;
+    bool showMySpecialPopup;
+    bool showMyAttackSkillPopup;
+    bool showMyDefenseSkillPopup;
+    bool showMyMoveSkillPopup;
+    
+    // Hover states
+    bool hoveringShop;
+    bool hoveringOpponentDeck;    // 恢復懸停狀態
+    bool hoveringOpponentGrave;
+    bool hoveringMyDeck;
+    bool hoveringMyGrave;
+    
+    // Skill hover states
+    bool hoveringOpponentSpecial;
+    bool hoveringOpponentAttackSkill;
+    bool hoveringOpponentDefenseSkill;
+    bool hoveringOpponentMoveSkill;
+    bool hoveringMySpecial;
+    bool hoveringMyAttackSkill;
+    bool hoveringMyDefenseSkill;
+    bool hoveringMyMoveSkill;
 } sBattleUIStage;
 
 // Global battle UI instance
@@ -64,5 +99,11 @@ void draw_right_column_stage();
 void draw_battle_grid_stage();
 void draw_player_info_stage(int32_t player_id, int32_t x, int32_t y, bool is_current);
 void draw_card_area_stage(const char* title, vector* cards, int32_t x, int32_t y, int32_t width, int32_t height, bool clickable);
+
+// New popup window functions
+void draw_shop_popup();
+void draw_deck_popup(const char* title, vector* deck, vector* graveyard);
+void draw_hover_preview(const char* title, vector* cards, int32_t mouseX, int32_t mouseY);
+void handle_popup_events(SDL_Event* event);
 
 #endif
