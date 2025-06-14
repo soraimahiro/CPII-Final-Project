@@ -31,7 +31,6 @@ void setup_initial_deck(sPlayer* player) {
 void setup_skill_decks(sPlayer* player) {
     int base_id = player->character * 12 + 11;  // 角色基本牌起始ID
     int meta_base_id = player->character * 4 + 135;  // 蛻變牌起始ID
-    if (player->character >= 7) meta_base_id += 2;
     
     // 攻擊技能牌堆
     for (int i = 0; i < 2; i++) {
@@ -443,6 +442,7 @@ void attack(sPlayer* defender, int total_damage) {
 
 // Attack action
 void handle_attack(sPlayer* attacker, sPlayer* defender) {
+    //TODO: 射程 1
     printf("\nAttack Action:\n");
     print_hand_cards(attacker);
     
@@ -669,8 +669,7 @@ void handle_skills(sPlayer* attacker, sPlayer* defender) {
         
     //TODO: 檢查是否為技能牌    
 
-    pushbackVector(&attacker->usecards, skill_card_id);
-    eraseVector(&attacker->hand, choice - 1);
+
 
     int32_t basic_card_id = -1;
     
@@ -694,30 +693,50 @@ void handle_skills(sPlayer* attacker, sPlayer* defender) {
         }
     }
     const Card* basic_card = getCardData(basic_card_id);
-
- 
-    pushbackVector(&attacker->usecards, basic_card_id);
-    eraseVector(&attacker->hand, choice - 1);
-        
    
     // TODO: Hua Mu-Lan
     
     if (skill_card_id <= 19) {
-        handle_redhood_skills(attacker, defender, skill_card, basic_card->level);
+        if (handle_redhood_skills(attacker, defender, skill_card, basic_card->level)) {
+            printf("range not enough\n");
+            return;
+        };
     }
     else if (skill_card_id <= 31) {
-        handle_snowwhite_skills(skill_card, basic_card->level);
+        if (handle_snowwhite_skills(attacker, defender, skill_card, basic_card->level)) {
+            printf("range not enough\n");
+            return;
+        }
     }
     else if (skill_card_id <= 43) {
-        handle_sleepingbeauty_skills(skill_card, basic_card->level);
+        if (handle_sleepingbeauty_skills(attacker, defender, skill_card, basic_card->level)) {
+            printf("range not enough\n");
+            return;
+        }
     }
     else if (skill_card_id <= 67) {
-        handle_mulan_skills(skill_card, basic_card->level);
+        if (handle_mulan_skills(attacker, defender, skill_card, basic_card->level)) {
+            printf("range not enough\n");
+            return;
+        }
     }
     else if (skill_card_id <= 79) {
-        handle_kaguya_skills(skill_card, basic_card->level);
+        if (handle_kaguya_skills(attacker, defender, skill_card, basic_card->level)) {
+            printf("range not enough\n");
+            return;
+        }
     }
-    else handle_matchgirl_skills(skill_card, basic_card->level);
+    else {
+        if (handle_matchgirl_skills(attacker, defender, skill_card, basic_card->level)) {
+            printf("range not enough\n");
+            return;
+        }
+    }
+
+    pushbackVector(&attacker->usecards, skill_card_id);
+    eraseVector(&attacker->hand, choice - 1);
+    pushbackVector(&attacker->usecards, basic_card_id);
+    eraseVector(&attacker->hand, choice - 1);
 
 }
 
