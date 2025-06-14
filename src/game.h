@@ -31,6 +31,7 @@ void initial_draw();
 void game_play_logic();  // Main game logic
 void print_game_state(); // Debug function to print current game state
 void print_player_state(sPlayer* player); // Debug function to print player state
+void print_hand_cards(sPlayer* player);
 void attack(sPlayer* defender, int total_damage);
 void defend(sPlayer* player, int total_defense);
 void move(sPlayer* player, int total_move);

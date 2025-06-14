@@ -17,4 +17,6 @@ int handle_mulan_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_
 int handle_kaguya_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
 int handle_matchgirl_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
 
+void knockback(sPlayer* attacker, sPlayer* defender, int distance);
+
 #endif
