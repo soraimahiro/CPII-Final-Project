@@ -44,6 +44,18 @@ void draw_text_center(const char* text, int32_t x, int32_t y, SDL_Color color, i
     SDL_DestroyTexture(textTexture);
 }
 
+void draw_text_wrapped(const char* text, int32_t x, int32_t y, SDL_Color color, int32_t font_size, int32_t max_width) {
+    if (!text || !uiBase.font || !uiBase.renderer) return;
+    if (TTF_SetFontSize(uiBase.font, font_size) < 0) {
+        printf("failed to set font size: %s\n", TTF_GetError());
+        return;
+    }
+    
+    // For now, just use regular draw_text without wrapping
+    // A full implementation would need to break text into multiple lines
+    draw_text(text, x, y, color, font_size);
+}
+
 sButton *create_button(SDL_Rect rect, char *text, 
                        SDL_Color *textColor, SDL_Color *bgColor, 
                        SDL_Color *borderColor, int32_t fontSize, int32_t typeNumber) {
