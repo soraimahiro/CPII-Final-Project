@@ -72,7 +72,6 @@ void cleanup_current_state() {
     showConfirmDialog = false;
 
     if(nowState == GAME_INIT_CHARACTER_SELECT && stateComponent.characterSelect){
-        printf("free charactor\n");
         int32_t PlayerCount = TOTAL_PLAYER;
         for(int32_t i = 0; i < SELECTABLE_CHARACTER_COUNT; i++){
             free_button(stateComponent.characterSelect->ppShowInfoButton[i]);
@@ -189,10 +188,9 @@ void change_state(gameState newState) {
             break;
         case GAME_OVER:
         default:
-            // No buttons needed for these states currently
             break;
     }
-    printf("change state to %d\n", nowState);
+    DEBUG_PRINT("[UI] change state to %d\n", nowState);
 }
 
 void init_ui() {
