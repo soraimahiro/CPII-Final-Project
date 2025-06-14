@@ -496,6 +496,7 @@ void game_init_character_select_ui(){
                     
                     if(hasUnselectedPlayer) {
                         stateComponent.characterSelect->showWarningDialog = true;
+                        break;
                     }
                     else {
                         // 先收集人類玩家已選的角色
