@@ -703,7 +703,7 @@ void handle_skills(sPlayer* attacker, sPlayer* defender) {
     // TODO: Hua Mu-Lan
     
     if (skill_card_id <= 19) {
-        handle_redhood_skills(skill_card, basic_card->level);
+        handle_redhood_skills(attacker, defender, skill_card, basic_card->level);
     }
     else if (skill_card_id <= 31) {
         handle_snowwhite_skills(skill_card, basic_card->level);
