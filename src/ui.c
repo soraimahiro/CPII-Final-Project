@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "ui_stage.h"
 
 extern sGame game;
 extern sUiBase uiBase;
@@ -81,6 +82,11 @@ void cleanup_current_state() {
         }
         free_button(stateComponent.characterSelect->pAcceptButton);
         free(stateComponent.characterSelect);
+    }
+    
+    // Clean up battle UI stage when leaving GAME_PLAY state
+    if(nowState == GAME_PLAY) {
+        cleanup_battle_ui_stage();
     }
 }
 
@@ -178,6 +184,9 @@ void change_state(gameState newState) {
         }
             break;
         case GAME_PLAY:
+            // Initialize battle UI stage
+            init_battle_ui_stage();
+            break;
         case GAME_OVER:
         default:
             // No buttons needed for these states currently
@@ -702,100 +711,21 @@ void game_init_character_select_ui(){
 }
 
 void game_play_ui(){
-    static bool first_render = true;
-    static bool waiting_for_input = false;
-    
     SDL_Event event;
+    
+    // Handle SDL events
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             running = 0;
+            return;
         }
+        
+        // Handle battle events using new stage UI
+        handle_battle_events_stage(&event);
     }
     
-    // First render the UI
-    SDL_SetRenderDrawColor(uiBase.renderer, 32, 32, 32, 255);
-    SDL_RenderClear(uiBase.renderer);
-
-    // Draw game board
-    SDL_Color white = {255, 255, 255, 255};
-    SDL_Color gray = {128, 128, 128, 255};
-    
-    // Draw 9x1 grid
-    int grid_size = 60;
-    int start_x = (SCREEN_WIDTH - (grid_size * 9)) / 2;
-    int start_y = (SCREEN_HEIGHT - grid_size) / 2;
-    
-    for (int i = 0; i < 9; i++) {
-        SDL_Rect rect = {
-            start_x + (i * grid_size),
-            start_y,
-            grid_size,
-            grid_size
-        };
-        SDL_SetRenderDrawColor(uiBase.renderer, 64, 64, 64, 255);
-        SDL_RenderFillRect(uiBase.renderer, &rect);
-        SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
-        SDL_RenderDrawRect(uiBase.renderer, &rect);
-    }
-    
-    // Draw players
-    for (int i = 0; i < 2; i++) {
-        if (game.players[i].character != -1) {
-            int player_x = start_x + ((game.players[i].locate[0] - 1) * grid_size);
-            int player_y = start_y;
-            
-            SDL_Rect player_rect = {
-                player_x + 10,
-                player_y + 10,
-                grid_size - 20,
-                grid_size - 20
-            };
-            
-            // Draw player circle
-            SDL_SetRenderDrawColor(uiBase.renderer, 
-                i == game.now_turn_player_id ? 255 : 128,  // Current player is brighter
-                i == 0 ? 0 : 255,  // Player 1 is red, Player 2 is blue
-                0,
-                255
-            );
-            SDL_RenderFillRect(uiBase.renderer, &player_rect);
-        }
-    }
-    
-    // Draw player info
-    for (int i = 0; i < 2; i++) {
-        if (game.players[i].character != -1) {
-            char info[100];
-            snprintf(info, 100, "P%d: HP %d/%d DEF %d/%d Energy %d", 
-                i + 1,
-                game.players[i].life,
-                game.players[i].maxlife,
-                game.players[i].defense,
-                game.players[i].maxdefense,
-                game.players[i].energy
-            );
-            draw_text(info, 20, 20 + (i * 30), white, 20);
-        }
-    }
-    
-    // Draw current phase
-    char phase_text[50];
-    snprintf(phase_text, 50, "Current Phase: %s", 
-        game.status == CHOOSE_MOVE ? "Action Phase" : "Other Phase"
-    );
-    draw_text(phase_text, 20, SCREEN_HEIGHT - 40, white, 20);
-
-    SDL_RenderPresent(uiBase.renderer);
-    
-    // 修改這裡的邏輯，讓 game_play_logic 能夠持續執行
-    if (waiting_for_input) {
-        printf("\nPress Enter to continue...");
-        getchar();
-        game_play_logic();
-        waiting_for_input = false;  // 重置等待狀態
-    } else {
-        waiting_for_input = true;  // 設置等待狀態，準備下一次執行
-    }
+    // Draw the battle UI using new stage implementation
+    draw_battle_ui_stage();
 }
 
 void game_over_ui(){
