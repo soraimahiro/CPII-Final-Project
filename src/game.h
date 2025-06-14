@@ -19,6 +19,7 @@ extern sGame game;
 void game_init();
 void init_character(sPlayer* pPlayer);
 
+
 // 新增的函數聲明
 void setup_initial_deck(sPlayer* player);
 void setup_skill_decks(sPlayer* player);
