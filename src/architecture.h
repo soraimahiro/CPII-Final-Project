@@ -76,6 +76,7 @@ typedef struct _sPlayer {
     struct {
         int8_t useDefenseAsATK;
         int8_t useMoveTarget;
+        bool special1;
     } kaguya;
 
     // mermaid 6
