@@ -18,16 +18,6 @@ extern sGame game;
 
 void game_init();
 void init_character(sPlayer* pPlayer);
-void init_red_hood(sPlayer* pPlayer);
-void init_snow_white(sPlayer* pPlayer);
-void init_sleeping_beauty(sPlayer* pPlayer);
-void init_alice(sPlayer* pPlayer);
-void init_mulan(sPlayer* pPlayer);
-void init_kaguya(sPlayer* pPlayer);
-void init_mermaid(sPlayer* pPlayer);
-void init_match_girl(sPlayer* pPlayer);
-void init_dorothy(sPlayer* pPlayer);
-void init_scheherazade(sPlayer* pPlayer);
 
 // 新增的函數聲明
 void setup_initial_deck(sPlayer* player);
@@ -41,7 +31,7 @@ void game_play_logic();  // Main game logic
 void print_game_state(); // Debug function to print current game state
 void print_player_state(sPlayer* player); // Debug function to print player state
 void attack(sPlayer* defender, int total_damage);
-void defend(sPlayer* player, int total_defense)
+void defend(sPlayer* player, int total_defense);
 void move(sPlayer* player, int total_move);
 
 #endif
