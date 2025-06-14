@@ -50,32 +50,65 @@ void draw_middle_column_stage() {
     int32_t largeAreaWidth = width / 2 - 20;
     int32_t skillCardWidth = largeAreaWidth / 4;
     
-    // Opponent areas (top) - symmetric to my areas
-    // Opponent hand cards
-    draw_card_area_stage("手牌", &game.players[opponent].hand, 
-                        startX + 10, 20, width - 20, 80, false); // Increased height to 80
+    // Opponent areas (top) - 恢復對手手牌區域顯示
+    // Opponent hand cards - 以按鈕方式顯示張數
+    SDL_Rect opponentHandRect = {startX + 10, 20, width - 20, 80};
+    SDL_SetRenderDrawColor(uiBase.renderer, 70, 70, 70, 255);
+    SDL_RenderFillRect(uiBase.renderer, &opponentHandRect);
+    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(uiBase.renderer, &opponentHandRect);
+    
+    // 對方手牌標題和張數
+    draw_text("對手手牌", startX + 15, 25, white, 16);
+    char opponentHandText[30];
+    snprintf(opponentHandText, 30, "(%d張)", game.players[opponent].hand.SIZE);
+    draw_text(opponentHandText, startX + width - 80, 25, white, 12);
+    
+    // 在區域中央顯示"無法查看"
+    draw_text_center("無法查看對手手牌", startX + width/2, 60, gray2, 14);
     
     // Opponent skill areas and used cards - positioned symmetrically
     int32_t opponentAreasY = 110; // Position for opponent skill areas
     
-    vector emptyVector = {0};
+    // Create vectors for opponent skill cards
+    vector opponentAttackSkills = initVector();
+    vector opponentDefenseSkills = initVector();
+    vector opponentMoveSkills = initVector();
     
+    // Filter opponent's hand and graveyard cards by type
+    for(int32_t i = 0; i < game.players[opponent].hand.SIZE; i++) {
+        const Card* cardData = getCardData(game.players[opponent].hand.array[i]);
+        if(cardData) {
+            if(cardData->type == 1) { // Attack skill
+                pushbackVector(&opponentAttackSkills, game.players[opponent].attackSkill.array[i]);
+            } else if(cardData->type == 2) { // Defense skill
+                pushbackVector(&opponentDefenseSkills, game.players[opponent].defenseSkill.array[i]);
+            } else if(cardData->type == 3) { // Move skill
+                pushbackVector(&opponentMoveSkills, game.players[opponent].moveSkill.array[i]);
+            }
+        }
+        else {
+            // If card data is missing, show a placeholder
+            draw_text("未知卡牌", startX + 10, opponentAreasY + i * 15, red, 12);
+        }
+    }
+
     // Opponent skill areas (4 vertical sections)
     draw_card_area_stage("必殺牌", &game.players[opponent].specialDeck, 
-                        startX + 10, opponentAreasY, skillCardWidth, 80, false);
+                        startX + 10, opponentAreasY, skillCardWidth, 80, true);
     
-    draw_card_area_stage("攻擊技能", &emptyVector, 
-                        startX + 10 + skillCardWidth, opponentAreasY, skillCardWidth, 80, false);
+    draw_card_area_stage("攻擊技能", &game.players[opponent].attackSkill, 
+                        startX + 10 + skillCardWidth, opponentAreasY, skillCardWidth, 80, true);
     
-    draw_card_area_stage("防禦技能", &emptyVector, 
-                        startX + 10 + skillCardWidth * 2, opponentAreasY, skillCardWidth, 80, false);
+    draw_card_area_stage("防禦技能", &game.players[opponent].defenseSkill, 
+                        startX + 10 + skillCardWidth * 2, opponentAreasY, skillCardWidth, 80, true);
     
-    draw_card_area_stage("移動技能", &emptyVector, 
-                        startX + 10 + skillCardWidth * 3, opponentAreasY, skillCardWidth, 80, false);
+    draw_card_area_stage("移動技能", &game.players[opponent].moveSkill, 
+                        startX + 10 + skillCardWidth * 3, opponentAreasY, skillCardWidth, 80, true);
     
     // Opponent used cards area (right side)
     draw_card_area_stage("反轉牌", &game.players[opponent].usecards, 
-                        startX + largeAreaWidth + 30, opponentAreasY, largeAreaWidth, 80, false);
+                        startX + largeAreaWidth + 30, opponentAreasY, largeAreaWidth, 80, true);
     
     // Main battle area (center of screen) - enlarged
     int32_t battleAreaY = 210; // Start after opponent areas with spacing
@@ -91,17 +124,39 @@ void draw_middle_column_stage() {
     // My skill areas and used cards - positioned symmetrically to opponent
     int32_t myAreasY = 510; // Position symmetric to opponent areas
     
+    // Create vectors for my skill cards
+    vector myAttackSkills = initVector();
+    vector myDefenseSkills = initVector();
+    vector myMoveSkills = initVector();
+    
+    // Filter current player's hand and graveyard cards by type
+    for(int32_t i = 0; i < game.players[current_player].hand.SIZE; i++) {
+        const Card* cardData = getCardData(game.players[current_player].hand.array[i]);
+        if(cardData) {
+            if(cardData->type == 1) { // Attack skill
+                pushbackVector(&myAttackSkills, game.players[current_player].attackSkill.array[i]);
+            } else if(cardData->type == 2) { // Defense skill
+                pushbackVector(&myDefenseSkills, game.players[current_player].defenseSkill.array[i]);
+            } else if(cardData->type == 3) { // Move skill
+                pushbackVector(&myMoveSkills, game.players[current_player].moveSkill.array[i]);
+            }
+        }
+        else {
+            // If card data is missing, show a placeholder
+            draw_text("未知卡牌", startX + 10, myAreasY + i * 15, red, 12);
+        }
+    }
     // Four skill areas from left to right: Ultimate, Attack, Defense, Move
     draw_card_area_stage("必殺牌", &game.players[current_player].specialDeck, 
                         startX + 10, myAreasY, skillCardWidth, 80, true);
     
-    draw_card_area_stage("攻擊技能", &emptyVector, 
+    draw_card_area_stage("攻擊技能", &game.players[current_player].attackSkill, 
                         startX + 10 + skillCardWidth, myAreasY, skillCardWidth, 80, true);
     
-    draw_card_area_stage("防禦技能", &emptyVector, 
+    draw_card_area_stage("防禦技能", &game.players[current_player].defenseSkill, 
                         startX + 10 + skillCardWidth * 2, myAreasY, skillCardWidth, 80, true);
     
-    draw_card_area_stage("移動技能", &emptyVector, 
+    draw_card_area_stage("移動技能", &game.players[current_player].moveSkill, 
                         startX + 10 + skillCardWidth * 3, myAreasY, skillCardWidth, 80, true);
     
     // My used cards area (right side)
@@ -112,103 +167,14 @@ void draw_middle_column_stage() {
     int32_t handY = 600; // Position symmetric to opponent hand
     draw_card_area_stage("手牌", &game.players[current_player].hand, 
                         startX + 10, handY, width - 20, 80, true); // Same height as opponent
-}
-
-void draw_right_column_stage() {
-    int32_t startX = SCREEN_WIDTH - RIGHT_COLUMN_WIDTH;
     
-    // Draw background - same color as middle column
-    SDL_Rect rightRect = {startX, 0, RIGHT_COLUMN_WIDTH, SCREEN_HEIGHT};
-    SDL_SetRenderDrawColor(uiBase.renderer, 50, 50, 50, 255);
-    SDL_RenderFillRect(uiBase.renderer, &rightRect);
-    
-    int32_t current_player = game.now_turn_player_id;
-    int32_t opponent = (current_player + 1) % 2;
-    
-    // Calculate relative positions
-    int32_t centerY = SCREEN_HEIGHT / 2;
-    int32_t topSectionHeight = centerY - 40; // Reserve 40px margin from center
-    int32_t bottomSectionHeight = SCREEN_HEIGHT - centerY - 40; // Reserve 40px margin from center
-    
-    // Top section - opponent buttons with proper spacing
-    int32_t topButtonSpacing = topSectionHeight / 6; // Space for 3 buttons + margins
-    int32_t topStartY = topButtonSpacing;
-    
-    // Settings button (top)
-    if(battleUIStage.settingsButton) {
-        int8_t buttonType = mouse_in_button(battleUIStage.settingsButton) ? 1 : 0;
-        draw_button(battleUIStage.settingsButton, buttonType);
-    }
-    
-    // Opponent deck button
-    if(battleUIStage.opponentDeckButton) {
-        int8_t buttonType = mouse_in_button(battleUIStage.opponentDeckButton) ? 1 : 0;
-        draw_button(battleUIStage.opponentDeckButton, buttonType);
-    }
-    
-    // Opponent graveyard button
-    if(battleUIStage.opponentGraveButton) {
-        int8_t buttonType = mouse_in_button(battleUIStage.opponentGraveButton) ? 1 : 0;
-        draw_button(battleUIStage.opponentGraveButton, buttonType);
-    }
-    
-    // Opponent metamorphosis display area - between buttons and center
-    int32_t opponentMetamorphY = topStartY + topButtonSpacing * 3 + 10;
-    int32_t opponentMetamorphHeight = centerY - 50 - opponentMetamorphY; // Fill remaining space above center
-    SDL_Rect opponentMetamorphRect = {startX + 10, opponentMetamorphY, RIGHT_COLUMN_WIDTH - 20, opponentMetamorphHeight};
-    SDL_SetRenderDrawColor(uiBase.renderer, 70, 70, 70, 255);
-    SDL_RenderFillRect(uiBase.renderer, &opponentMetamorphRect);
-    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(uiBase.renderer, &opponentMetamorphRect);
-    
-    draw_text("對手蛻變牌", startX + 15, opponentMetamorphY + 5, white, 16);
-    char opponentMetamorphText[30];
-    snprintf(opponentMetamorphText, 30, "(%d張)", game.players[opponent].metamorphosis.SIZE);
-    draw_text(opponentMetamorphText, startX + 15, opponentMetamorphY + 25, white, 12);
-    
-    // Basic card shop button (center) - vertically centered
-    if(battleUIStage.shopButton) {
-        int8_t buttonType = mouse_in_button(battleUIStage.shopButton) ? 1 : 0;
-        draw_button(battleUIStage.shopButton, buttonType);
-    }
-    
-    // My metamorphosis display area - between center and bottom buttons
-    int32_t myMetamorphY = centerY + 50;
-    int32_t bottomButtonsStartY = SCREEN_HEIGHT - (bottomSectionHeight / 6) * 4 - 10; // Space for 4 buttons
-    int32_t myMetamorphHeight = bottomButtonsStartY - myMetamorphY - 10;
-    SDL_Rect myMetamorphRect = {startX + 10, myMetamorphY, RIGHT_COLUMN_WIDTH - 20, myMetamorphHeight};
-    SDL_SetRenderDrawColor(uiBase.renderer, 70, 70, 70, 255);
-    SDL_RenderFillRect(uiBase.renderer, &myMetamorphRect);
-    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(uiBase.renderer, &myMetamorphRect);
-    
-    draw_text("我的蛻變牌", startX + 15, myMetamorphY + 5, white, 16);
-    char myMetamorphText[30];
-    snprintf(myMetamorphText, 30, "(%d張)", game.players[current_player].metamorphosis.SIZE);
-    draw_text(myMetamorphText, startX + 15, myMetamorphY + 25, white, 12);
-    
-    // Bottom section - my buttons with proper spacing
-    int32_t bottomButtonSpacing = bottomSectionHeight / 6; // Space for 4 buttons + margins
-    
-    // My graveyard button
-    if(battleUIStage.myGraveButton) {
-        int8_t buttonType = mouse_in_button(battleUIStage.myGraveButton) ? 1 : 0;
-        draw_button(battleUIStage.myGraveButton, buttonType);
-    }
-    
-    // My deck button
-    if(battleUIStage.myDeckButton) {
-        int8_t buttonType = mouse_in_button(battleUIStage.myDeckButton) ? 1 : 0;
-        draw_button(battleUIStage.myDeckButton, buttonType);
-    }
-    
-    // Action buttons (bottom)
-    for(int32_t i = 0; i < 2; i++) {
-        if(battleUIStage.actionButtons[i]) {
-            int8_t buttonType = mouse_in_button(battleUIStage.actionButtons[i]) ? 1 : 0;
-            draw_button(battleUIStage.actionButtons[i], buttonType);
-        }
-    }
+    // Clean up temporary vectors
+    clearVector(&opponentAttackSkills);
+    clearVector(&opponentDefenseSkills);
+    clearVector(&opponentMoveSkills);
+    clearVector(&myAttackSkills);
+    clearVector(&myDefenseSkills);
+    clearVector(&myMoveSkills);
 }
 
 void init_battle_ui_stage() {
@@ -225,7 +191,7 @@ void init_battle_ui_stage() {
     int32_t topSectionHeight = centerY - 40;
     int32_t bottomSectionHeight = SCREEN_HEIGHT - centerY - 40;
     
-    // Top section button spacing and positions
+    // Top section button spacing and positions - 調整為6個區塊（移除對手手牌按鈕）
     int32_t topButtonSpacing = topSectionHeight / 6;
     int32_t topStartY = topButtonSpacing;
     
@@ -275,6 +241,9 @@ void init_battle_ui_stage() {
     battleUIStage.opponentMetamorphButton = NULL;
     battleUIStage.myMetamorphButton = NULL;
     
+    // 初始化對手手牌按鈕為 NULL（不再使用）
+    battleUIStage.opponentHandButton = NULL;
+    
     // Initialize card buttons (will be created dynamically)
     for(int32_t i = 0; i < 32; i++) {
         battleUIStage.cardButtons[i] = NULL;
@@ -288,6 +257,137 @@ void init_battle_ui_stage() {
     battleUIStage.focusMode = false;
     battleUIStage.focusSelectedHand = -1;
     battleUIStage.focusSelectedGrave = -1;
+    
+    // Initialize new popup states
+    battleUIStage.showShopPopup = false;
+    battleUIStage.showOpponentGravePopup = false;
+    battleUIStage.showMyDeckPopup = false;
+    battleUIStage.showMyGravePopup = false;
+    
+    // Initialize skill popup states
+    battleUIStage.showOpponentSpecialPopup = false;
+    battleUIStage.showOpponentAttackSkillPopup = false;
+    battleUIStage.showOpponentDefenseSkillPopup = false;
+    battleUIStage.showOpponentMoveSkillPopup = false;
+    battleUIStage.showMySpecialPopup = false;
+    battleUIStage.showMyAttackSkillPopup = false;
+    battleUIStage.showMyDefenseSkillPopup = false;
+    battleUIStage.showMyMoveSkillPopup = false;
+    
+    // Initialize hover states
+    battleUIStage.hoveringShop = false;
+    battleUIStage.hoveringOpponentDeck = false;    // 恢復懸停狀態初始化
+    battleUIStage.hoveringOpponentGrave = false;
+    battleUIStage.hoveringMyDeck = false;
+    battleUIStage.hoveringMyGrave = false;
+    
+    // Initialize skill hover states
+    battleUIStage.hoveringOpponentSpecial = false;
+    battleUIStage.hoveringOpponentAttackSkill = false;
+    battleUIStage.hoveringOpponentDefenseSkill = false;
+    battleUIStage.hoveringOpponentMoveSkill = false;
+    battleUIStage.hoveringMySpecial = false;
+    battleUIStage.hoveringMyAttackSkill = false;
+    battleUIStage.hoveringMyDefenseSkill = false;
+    battleUIStage.hoveringMyMoveSkill = false;
+}
+
+void draw_right_column_stage() {
+    int32_t startX = SCREEN_WIDTH - RIGHT_COLUMN_WIDTH;
+    
+    // Draw background - same color as middle column
+    SDL_Rect rightRect = {startX, 0, RIGHT_COLUMN_WIDTH, SCREEN_HEIGHT};
+    SDL_SetRenderDrawColor(uiBase.renderer, 50, 50, 50, 255);
+    SDL_RenderFillRect(uiBase.renderer, &rightRect);
+    
+    int32_t current_player = game.now_turn_player_id;
+    int32_t opponent = (current_player + 1) % 2;
+    
+    // Calculate relative positions
+    int32_t centerY = SCREEN_HEIGHT / 2;
+    int32_t topSectionHeight = centerY - 40;
+    int32_t bottomSectionHeight = SCREEN_HEIGHT - centerY - 40;
+    
+    // Top section - opponent buttons with proper spacing（調整為3個按鈕）
+    int32_t topButtonSpacing = topSectionHeight / 6;
+    int32_t topStartY = topButtonSpacing;
+    
+    // Settings button (top)
+    if(battleUIStage.settingsButton) {
+        int8_t buttonType = mouse_in_button(battleUIStage.settingsButton) ? 1 : 0;
+        draw_button(battleUIStage.settingsButton, buttonType);
+    }
+    
+    // Opponent deck button
+    if(battleUIStage.opponentDeckButton) {
+        int8_t buttonType = mouse_in_button(battleUIStage.opponentDeckButton) ? 1 : 0;
+        draw_button(battleUIStage.opponentDeckButton, buttonType);
+    }
+    
+    // Opponent graveyard button
+    if(battleUIStage.opponentGraveButton) {
+        int8_t buttonType = mouse_in_button(battleUIStage.opponentGraveButton) ? 1 : 0;
+        draw_button(battleUIStage.opponentGraveButton, buttonType);
+    }
+    
+    // Opponent metamorphosis display area - 調整位置與我方蛻變牌相同大小
+    int32_t opponentMetamorphY = topStartY + topButtonSpacing * 3 + 10;
+    int32_t bottomButtonsStartY = SCREEN_HEIGHT - (bottomSectionHeight / 6) * 4 - 10;
+    int32_t shopButtonY = centerY - 15;
+    int32_t myMetamorphY = centerY + 50;
+    
+    // 對手蛻變牌高度與我方蛻變牌相同
+    int32_t myMetamorphHeight = bottomButtonsStartY - myMetamorphY - 10;
+    int32_t opponentMetamorphHeight = shopButtonY - 30 - opponentMetamorphY;
+    
+    // 使用相同的高度
+    int32_t metamorphHeight = myMetamorphHeight;
+    
+    SDL_Rect opponentMetamorphRect = {startX + 10, opponentMetamorphY, RIGHT_COLUMN_WIDTH - 20, metamorphHeight};
+    SDL_SetRenderDrawColor(uiBase.renderer, 70, 70, 70, 255);
+    SDL_RenderFillRect(uiBase.renderer, &opponentMetamorphRect);
+    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(uiBase.renderer, &opponentMetamorphRect);
+    
+    draw_text("對手蛻變牌", startX + 15, opponentMetamorphY + 5, white, 16);
+    
+    // Basic card shop button (center) - vertically centered
+    if(battleUIStage.shopButton) {
+        int8_t buttonType = mouse_in_button(battleUIStage.shopButton) ? 1 : 0;
+        draw_button(battleUIStage.shopButton, buttonType);
+    }
+    
+    // My metamorphosis display area - 與對手蛻變牌相同大小
+    SDL_Rect myMetamorphRect = {startX + 10, myMetamorphY, RIGHT_COLUMN_WIDTH - 20, metamorphHeight};
+    SDL_SetRenderDrawColor(uiBase.renderer, 70, 70, 70, 255);
+    SDL_RenderFillRect(uiBase.renderer, &myMetamorphRect);
+    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(uiBase.renderer, &myMetamorphRect);
+    
+    draw_text("我的蛻變牌", startX + 15, myMetamorphY + 5, white, 16);
+    
+    // Bottom section - my buttons with proper spacing
+    int32_t bottomButtonSpacing = bottomSectionHeight / 6;
+    
+    // My graveyard button
+    if(battleUIStage.myGraveButton) {
+        int8_t buttonType = mouse_in_button(battleUIStage.myGraveButton) ? 1 : 0;
+        draw_button(battleUIStage.myGraveButton, buttonType);
+    }
+    
+    // My deck button
+    if(battleUIStage.myDeckButton) {
+        int8_t buttonType = mouse_in_button(battleUIStage.myDeckButton) ? 1 : 0;
+        draw_button(battleUIStage.myDeckButton, buttonType);
+    }
+    
+    // Action buttons (bottom)
+    for(int32_t i = 0; i < 2; i++) {
+        if(battleUIStage.actionButtons[i]) {
+            int8_t buttonType = mouse_in_button(battleUIStage.actionButtons[i]) ? 1 : 0;
+            draw_button(battleUIStage.actionButtons[i], buttonType);
+        }
+    }
 }
 
 void cleanup_battle_ui_stage() {
@@ -308,6 +408,11 @@ void cleanup_battle_ui_stage() {
     if(battleUIStage.shopButton) {
         free_button(battleUIStage.shopButton);
         battleUIStage.shopButton = NULL;
+    }
+    
+    if(battleUIStage.opponentHandButton) {
+        free_button(battleUIStage.opponentHandButton);
+        battleUIStage.opponentHandButton = NULL;
     }
     
     if(battleUIStage.opponentDeckButton) {
@@ -441,63 +546,303 @@ void draw_card_area_stage(const char* title, vector* cards, int32_t x, int32_t y
     // Title - 16px font
     draw_text(title, x + 5, y + 5, white, 16);
     
-    // Card count - 12px font
-    char countText[20];
-    snprintf(countText, 20, "(%d張)", cards->SIZE);
-    draw_text(countText, x + width - 60, y + 5, white, 12);
+    // 移除卡牌數量顯示
     
-    if(!clickable || cards->SIZE == 0) return;
-    
-    // Show first few cards as text for now (max 8 cards)
-    int32_t cardY = y + 25;
-    int32_t maxCards = (height - 30) / 15; // Approximately 15px per line
-    if(maxCards > 8) maxCards = 8;
-    if(maxCards > cards->SIZE) maxCards = cards->SIZE;
-    
-    for(int32_t i = 0; i < maxCards; i++) {
-        const Card* cardData = getCardData(cards->array[i]);
-        if(cardData) {
-            char cardText[100];
-            // Limit card name to 8 characters as specified
-            snprintf(cardText, 100, "%d. %.8s", i + 1, cardData->name);
-            draw_text(cardText, x + 10, cardY + i * 15, white, 12);
+    // Store hover state for clickable areas
+    if(clickable) {
+        int32_t mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        bool isHovering = (mouseX >= x && mouseX < x + width && 
+                          mouseY >= y && mouseY < y + height);
+        
+        // Update hover states based on title
+        if(strcmp(title, "必殺牌") == 0) {
+            if(y < SCREEN_HEIGHT/2) {
+                battleUIStage.hoveringOpponentSpecial = isHovering;
+            } else {
+                battleUIStage.hoveringMySpecial = isHovering;
+            }
+        } else if(strcmp(title, "攻擊技能") == 0) {
+            if(y < SCREEN_HEIGHT/2) {
+                battleUIStage.hoveringOpponentAttackSkill = isHovering;
+            } else {
+                battleUIStage.hoveringMyAttackSkill = isHovering;
+            }
+        } else if(strcmp(title, "防禦技能") == 0) {
+            if(y < SCREEN_HEIGHT/2) {
+                battleUIStage.hoveringOpponentDefenseSkill = isHovering;
+            } else {
+                battleUIStage.hoveringMyDefenseSkill = isHovering;
+            }
+        } else if(strcmp(title, "移動技能") == 0) {
+            if(y < SCREEN_HEIGHT/2) {
+                battleUIStage.hoveringOpponentMoveSkill = isHovering;
+            } else {
+                battleUIStage.hoveringMyMoveSkill = isHovering;
+            }
         }
     }
     
-    // If more than 8 cards, show "..."
-    if(cards->SIZE > 8) {
-        draw_text("...", x + 10, cardY + 8 * 15, white, 12);
+    if(!clickable || cards->SIZE == 0) return;
+    
+    int32_t cardY = y + 25;
+    
+    // 檢查是否為我方手牌（位於下方且標題為"手牌"）
+    bool isMyHandCards = (strcmp(title, "手牌") == 0) && (y > SCREEN_HEIGHT/2);
+    
+    if(isMyHandCards) {
+        // 我方手牌顯示全部卡牌
+        int32_t maxCardsPerRow = width / 150; // 每行最多顯示的卡牌數（假設每張卡需要150px寬度）
+        if(maxCardsPerRow < 1) maxCardsPerRow = 1;
+        
+        int32_t lineHeight = 15;
+        int32_t currentRow = 0;
+        int32_t currentCol = 0;
+        
+        for(int32_t i = 0; i < cards->SIZE; i++) {
+            const Card* cardData = getCardData(cards->array[i]);
+            if(cardData) {
+                char cardText[50]; // 縮短顯示文字以容納更多卡牌
+                snprintf(cardText, 50, "%d.%s", i + 1, cardData->name);
+                
+                // 計算卡牌顯示位置
+                int32_t cardX = x + 10 + currentCol * 150;
+                int32_t cardDisplayY = cardY + currentRow * lineHeight;
+                
+                // 檢查是否需要換行
+                if(cardX + 140 > x + width) {
+                    currentRow++;
+                    currentCol = 0;
+                    cardX = x + 10;
+                    cardDisplayY = cardY + currentRow * lineHeight;
+                }
+                
+                // 檢查是否超出區域高度
+                if(cardDisplayY + lineHeight > y + height - 5) {
+                    // 顯示省略號並停止
+                    draw_text("...", x + 10, cardDisplayY, white, 12);
+                    break;
+                }
+                
+                draw_text(cardText, cardX, cardDisplayY, white, 12);
+                currentCol++;
+            }
+            else {
+                // If card data is missing, show a placeholder
+                char cardText[50];
+                snprintf(cardText, 50, "%d.未知卡牌", i + 1);
+                
+                int32_t cardX = x + 10 + currentCol * 150;
+                int32_t cardDisplayY = cardY + currentRow * lineHeight;
+                
+                if(cardX + 140 > x + width) {
+                    currentRow++;
+                    currentCol = 0;
+                    cardX = x + 10;
+                    cardDisplayY = cardY + currentRow * lineHeight;
+                }
+                
+                if(cardDisplayY + lineHeight > y + height - 5) {
+                    draw_text("...", x + 10, cardDisplayY, red, 12);
+                    break;
+                }
+                
+                draw_text(cardText, cardX, cardDisplayY, red, 12);
+                currentCol++;
+            }
+        }
+    }
+    else {
+        // 其他區域保持原來的顯示方式（只顯示前3張）
+        int32_t maxCards = 3; // Show only first 3 cards
+        if(maxCards > cards->SIZE) maxCards = cards->SIZE;
+        
+        for(int32_t i = 0; i < maxCards; i++) {
+            const Card* cardData = getCardData(cards->array[i]);
+            if(cardData) {
+                char cardText[150];
+                // Display full card name without character limit
+                snprintf(cardText, 150, "%d. %s", i + 1, cardData->name);
+                
+                // Use simple text drawing for now
+                draw_text(cardText, x + 10, cardY + i * 15, white, 12);
+            }
+            else {
+                // If card data is missing, show a placeholder
+                draw_text("未知卡牌", x + 10, cardY + i * 15, red, 12);
+            }
+        }
+        
+        // If more than 3 cards, show "..."
+        if(cards->SIZE > 3) {
+            draw_text("...", x + 10, cardY + 3 * 15, white, 12);
+        }
     }
 }
 
-void draw_battle_ui_stage() {
-    // Clear screen with main background color
-    SDL_SetRenderDrawColor(uiBase.renderer, 30, 30, 30, 255);
-    SDL_RenderClear(uiBase.renderer);
+void draw_hover_preview(const char* title, vector* cards, int32_t mouseX, int32_t mouseY) {
+    // Small preview window that follows mouse
+    int32_t previewWidth = 200;
+    int32_t previewHeight = 120;
     
-    // Draw three columns
-    draw_left_column_stage();
-    draw_middle_column_stage();
-    draw_right_column_stage();
+    // Position preview to avoid screen edges
+    int32_t previewX = mouseX + 20;
+    int32_t previewY = mouseY - 60;
     
-    // Draw focus mode overlay if active
-    if(battleUIStage.focusMode) {
-        // Semi-transparent overlay
-        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
-        SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
-        SDL_RenderFillRect(uiBase.renderer, &overlay);
-        
-        // Focus instruction - 24px font
-        draw_text_center("專注模式：選擇一張牌移除", SCREEN_WIDTH/2, 50, white, 24);
-        draw_text_center("點擊手牌或棄牌堆中的牌，再次點擊確認選擇", SCREEN_WIDTH/2, 80, lightblue1, 18);
-        draw_text_center("按 ESC 取消", SCREEN_WIDTH/2, 110, gray2, 16);
+    if (previewX + previewWidth > SCREEN_WIDTH) {
+        previewX = mouseX - previewWidth - 20;
+    }
+    if (previewY < 0) {
+        previewY = 20;
+    }
+    if (previewY + previewHeight > SCREEN_HEIGHT) {
+        previewY = SCREEN_HEIGHT - previewHeight - 20;
     }
     
-    SDL_RenderPresent(uiBase.renderer);
+    // Draw preview background
+    SDL_Rect previewRect = {previewX, previewY, previewWidth, previewHeight};
+    SDL_SetRenderDrawColor(uiBase.renderer, 40, 40, 40, 240);
+    SDL_RenderFillRect(uiBase.renderer, &previewRect);
+    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(uiBase.renderer, &previewRect);
+    
+    // Draw title
+    draw_text(title, previewX + 10, previewY + 10, white, 16);
+    
+    if (cards) {
+        // 移除卡牌數量顯示，改為顯示"詳細內容"
+        draw_text("詳細內容", previewX + 10, previewY + 35, lightblue1, 14);
+        
+        // Show first few cards
+        int32_t maxShow = 3;
+        for (int32_t i = 0; i < maxShow && i < cards->SIZE; i++) {
+            const Card* cardData = getCardData(cards->array[i]);
+            if (cardData) {
+                draw_text(cardData->name, previewX + 10, previewY + 60 + i * 18, white, 12);
+            }
+        }
+        
+        if (cards->SIZE > maxShow) {
+            draw_text("...", previewX + 10, previewY + 60 + maxShow * 18, gray2, 12);
+        }
+    } else {
+        // 對於對手牌庫或商店等特殊情況
+        if (strcmp(title, "對手牌庫") == 0) {
+            draw_text("無法查看對手牌庫", previewX + 10, previewY + 35, gray2, 14);
+        } else if (strcmp(title, "對手手牌") == 0) {
+            draw_text("無法查看對手手牌", previewX + 10, previewY + 35, gray2, 14);
+        } else if (strcmp(title, "基礎牌商店") == 0) {
+            draw_text("基本攻擊/防禦/移動牌", previewX + 10, previewY + 35, lightblue1, 14);
+            draw_text("點擊查看詳細內容", previewX + 10, previewY + 60, white, 12);
+        }
+    }
 }
 
 void handle_battle_events_stage(SDL_Event* event) {
     if(event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
+        int32_t mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        
+        // Handle popup close events first
+        bool anyPopupOpen = (battleUIStage.showShopPopup || 
+                           battleUIStage.showOpponentGravePopup || battleUIStage.showMyDeckPopup || 
+                           battleUIStage.showMyGravePopup || battleUIStage.showOpponentSpecialPopup ||
+                           battleUIStage.showOpponentAttackSkillPopup || battleUIStage.showOpponentDefenseSkillPopup ||
+                           battleUIStage.showOpponentMoveSkillPopup || battleUIStage.showMySpecialPopup ||
+                           battleUIStage.showMyAttackSkillPopup || battleUIStage.showMyDefenseSkillPopup ||
+                           battleUIStage.showMyMoveSkillPopup);
+        
+        if (anyPopupOpen) {
+            // Check if clicked outside popup area
+            SDL_Rect dialogRect;
+            if (battleUIStage.showShopPopup) {
+                dialogRect = (SDL_Rect){SCREEN_WIDTH/2 - 450, SCREEN_HEIGHT/2 - 250, 900, 500}; // Updated size
+            } else {
+                dialogRect = (SDL_Rect){SCREEN_WIDTH/2 - 350, SCREEN_HEIGHT/2 - 250, 700, 500};
+            }
+            
+            if (!(mouseX >= dialogRect.x && mouseX < dialogRect.x + dialogRect.w &&
+                  mouseY >= dialogRect.y && mouseY < dialogRect.y + dialogRect.h)) {
+                // Close all popups
+                battleUIStage.showShopPopup = false;
+                battleUIStage.showOpponentGravePopup = false;
+                battleUIStage.showMyDeckPopup = false;
+                battleUIStage.showMyGravePopup = false;
+                battleUIStage.showOpponentSpecialPopup = false;
+                battleUIStage.showOpponentAttackSkillPopup = false;
+                battleUIStage.showOpponentDefenseSkillPopup = false;
+                battleUIStage.showOpponentMoveSkillPopup = false;
+                battleUIStage.showMySpecialPopup = false;
+                battleUIStage.showMyAttackSkillPopup = false;
+                battleUIStage.showMyDefenseSkillPopup = false;
+                battleUIStage.showMyMoveSkillPopup = false;
+                return;
+            }
+            return; // Don't process other clicks when popup is open
+        }
+        
+        // Handle skill area clicks
+        int32_t middleStartX = LEFT_COLUMN_WIDTH;
+        int32_t width = MIDDLE_COLUMN_WIDTH;
+        int32_t largeAreaWidth = width / 2 - 20;
+        int32_t skillCardWidth = largeAreaWidth / 4;
+        
+        // Opponent skill areas
+        int32_t opponentAreasY = 110;
+        SDL_Rect opponentSpecialRect = {middleStartX + 10, opponentAreasY, skillCardWidth, 80};
+        SDL_Rect opponentAttackRect = {middleStartX + 10 + skillCardWidth, opponentAreasY, skillCardWidth, 80};
+        SDL_Rect opponentDefenseRect = {middleStartX + 10 + skillCardWidth * 2, opponentAreasY, skillCardWidth, 80};
+        SDL_Rect opponentMoveRect = {middleStartX + 10 + skillCardWidth * 3, opponentAreasY, skillCardWidth, 80};
+        
+        // My skill areas
+        int32_t myAreasY = 510;
+        SDL_Rect mySpecialRect = {middleStartX + 10, myAreasY, skillCardWidth, 80};
+        SDL_Rect myAttackRect = {middleStartX + 10 + skillCardWidth, myAreasY, skillCardWidth, 80};
+        SDL_Rect myDefenseRect = {middleStartX + 10 + skillCardWidth * 2, myAreasY, skillCardWidth, 80};
+        SDL_Rect myMoveRect = {middleStartX + 10 + skillCardWidth * 3, myAreasY, skillCardWidth, 80};
+        
+        // Check skill area clicks
+        if (mouseX >= opponentSpecialRect.x && mouseX < opponentSpecialRect.x + opponentSpecialRect.w &&
+            mouseY >= opponentSpecialRect.y && mouseY < opponentSpecialRect.y + opponentSpecialRect.h) {
+            battleUIStage.showOpponentSpecialPopup = true;
+            return;
+        }
+        if (mouseX >= opponentAttackRect.x && mouseX < opponentAttackRect.x + opponentAttackRect.w &&
+            mouseY >= opponentAttackRect.y && mouseY < opponentAttackRect.y + opponentAttackRect.h) {
+            battleUIStage.showOpponentAttackSkillPopup = true;
+            return;
+        }
+        if (mouseX >= opponentDefenseRect.x && mouseX < opponentDefenseRect.x + opponentDefenseRect.w &&
+            mouseY >= opponentDefenseRect.y && mouseY < opponentDefenseRect.y + opponentDefenseRect.h) {
+            battleUIStage.showOpponentDefenseSkillPopup = true;
+            return;
+        }
+        if (mouseX >= opponentMoveRect.x && mouseX < opponentMoveRect.x + opponentMoveRect.w &&
+            mouseY >= opponentMoveRect.y && mouseY < opponentMoveRect.y + opponentMoveRect.h) {
+            battleUIStage.showOpponentMoveSkillPopup = true;
+            return;
+        }
+        if (mouseX >= mySpecialRect.x && mouseX < mySpecialRect.x + mySpecialRect.w &&
+            mouseY >= mySpecialRect.y && mouseY < mySpecialRect.y + mySpecialRect.h) {
+            battleUIStage.showMySpecialPopup = true;
+            return;
+        }
+        if (mouseX >= myAttackRect.x && mouseX < myAttackRect.x + myAttackRect.w &&
+            mouseY >= myAttackRect.y && mouseY < myAttackRect.y + myAttackRect.h) {
+            battleUIStage.showMyAttackSkillPopup = true;
+            return;
+        }
+        if (mouseX >= myDefenseRect.x && mouseX < myDefenseRect.x + myDefenseRect.w &&
+            mouseY >= myDefenseRect.y && mouseY < myDefenseRect.y + myDefenseRect.h) {
+            battleUIStage.showMyDefenseSkillPopup = true;
+            return;
+        }
+        if (mouseX >= myMoveRect.x && mouseX < myMoveRect.x + myMoveRect.w &&
+            mouseY >= myMoveRect.y && mouseY < myMoveRect.y + myMoveRect.h) {
+            battleUIStage.showMyMoveSkillPopup = true;
+            return;
+        }
+        
         // Handle action button clicks (only 2 buttons now)
         for(int32_t i = 0; i < 2; i++) {
             if(battleUIStage.actionButtons[i] && mouse_in_button(battleUIStage.actionButtons[i])) {
@@ -514,45 +859,46 @@ void handle_battle_events_stage(SDL_Event* event) {
         
         if(battleUIStage.shopButton && mouse_in_button(battleUIStage.shopButton)) {
             printf("Shop button clicked\n");
-            battleUIStage.showShop = !battleUIStage.showShop;
+            battleUIStage.showShopPopup = true;
             return;
         }
         
-        // Handle deck/graveyard button clicks
+        // Handle deck/graveyard button clicks (移除對手手牌按鈕的檢查)
         if(battleUIStage.opponentDeckButton && mouse_in_button(battleUIStage.opponentDeckButton)) {
-            printf("Opponent deck button clicked\n");
+            printf("Opponent deck button clicked (no action)\n");
+            // 不執行任何動作，只是打印訊息
             return;
         }
         
         if(battleUIStage.opponentGraveButton && mouse_in_button(battleUIStage.opponentGraveButton)) {
             printf("Opponent graveyard button clicked\n");
+            battleUIStage.showOpponentGravePopup = true;
             return;
         }
         
         if(battleUIStage.myDeckButton && mouse_in_button(battleUIStage.myDeckButton)) {
-            printf("My deck button clicked\n");
+            printf("My deck button clicked (no action)\n");
+            // 我的牌庫按鈕不執行任何動作
             return;
         }
         
         if(battleUIStage.myGraveButton && mouse_in_button(battleUIStage.myGraveButton)) {
             printf("My graveyard button clicked\n");
+            battleUIStage.showMyGravePopup = true;
             return;
         }
         
         // Handle metamorphosis area clicks (updated positions with relative coordinates)
-        int32_t mouseX, mouseY;
-        SDL_GetMouseState(&mouseX, &mouseY);
-        
-        int32_t startX = SCREEN_WIDTH - RIGHT_COLUMN_WIDTH;
+        int32_t rightStartX = SCREEN_WIDTH - RIGHT_COLUMN_WIDTH;
         int32_t centerY = SCREEN_HEIGHT / 2;
         int32_t topSectionHeight = centerY - 40;
         int32_t topButtonSpacing = topSectionHeight / 6;
         int32_t topStartY = topButtonSpacing;
         
         // Check opponent metamorphosis area click
-        int32_t opponentMetamorphY = topStartY + topButtonSpacing * 3 + 10;
+        int32_t opponentMetamorphY = topStartY + topButtonSpacing * 4 + 10;
         int32_t opponentMetamorphHeight = centerY - 50 - opponentMetamorphY;
-        SDL_Rect opponentMetamorphRect = {startX + 10, opponentMetamorphY, RIGHT_COLUMN_WIDTH - 20, opponentMetamorphHeight};
+        SDL_Rect opponentMetamorphRect = {rightStartX + 10, opponentMetamorphY, RIGHT_COLUMN_WIDTH - 20, opponentMetamorphHeight};
         if(mouseX >= opponentMetamorphRect.x && mouseX < opponentMetamorphRect.x + opponentMetamorphRect.w &&
            mouseY >= opponentMetamorphRect.y && mouseY < opponentMetamorphRect.y + opponentMetamorphRect.h) {
             printf("Opponent metamorphosis area clicked\n");
@@ -565,7 +911,7 @@ void handle_battle_events_stage(SDL_Event* event) {
         int32_t bottomSectionHeight = SCREEN_HEIGHT - centerY - 40;
         int32_t bottomButtonsStartY = SCREEN_HEIGHT - (bottomSectionHeight / 6) * 4 - 10;
         int32_t myMetamorphHeight = bottomButtonsStartY - myMetamorphY - 10;
-        SDL_Rect myMetamorphRect = {startX + 10, myMetamorphY, RIGHT_COLUMN_WIDTH - 20, myMetamorphHeight};
+        SDL_Rect myMetamorphRect = {rightStartX + 10, myMetamorphY, RIGHT_COLUMN_WIDTH - 20, myMetamorphHeight};
         if(mouseX >= myMetamorphRect.x && mouseX < myMetamorphRect.x + myMetamorphRect.w &&
            mouseY >= myMetamorphRect.y && mouseY < myMetamorphRect.y + myMetamorphRect.h) {
             printf("My metamorphosis area clicked\n");
@@ -575,6 +921,20 @@ void handle_battle_events_stage(SDL_Event* event) {
     }
     
     if(event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE) {
+        // Close all popups on ESC (移除對手牌庫彈出視窗)
+        battleUIStage.showShopPopup = false;
+        battleUIStage.showOpponentGravePopup = false;
+        battleUIStage.showMyDeckPopup = false;
+        battleUIStage.showMyGravePopup = false;
+        battleUIStage.showOpponentSpecialPopup = false;
+        battleUIStage.showOpponentAttackSkillPopup = false;
+        battleUIStage.showOpponentDefenseSkillPopup = false;
+        battleUIStage.showOpponentMoveSkillPopup = false;
+        battleUIStage.showMySpecialPopup = false;
+        battleUIStage.showMyAttackSkillPopup = false;
+        battleUIStage.showMyDefenseSkillPopup = false;
+        battleUIStage.showMyMoveSkillPopup = false;
+        
         battleUIStage.focusMode = false;
     }
 }
@@ -671,4 +1031,266 @@ void get_active_focus(int32_t *handCard, int32_t *graveCard) {
     }
     
     battleUIStage.focusMode = false;
+}
+
+void draw_deck_popup(const char* title, vector* deck, vector* graveyard) {
+    // Semi-transparent overlay
+    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+    SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+    SDL_RenderFillRect(uiBase.renderer, &overlay);
+    
+    // Main popup window
+    SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 350, SCREEN_HEIGHT/2 - 250, 700, 500};
+    SDL_SetRenderDrawColor(uiBase.renderer, 64, 64, 64, 255);
+    SDL_RenderFillRect(uiBase.renderer, &dialogRect);
+    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(uiBase.renderer, &dialogRect);
+    
+    // Title
+    draw_text_center(title, SCREEN_WIDTH/2, dialogRect.y + 30, white, 32);
+    
+    // Card list area
+    int32_t listY = dialogRect.y + 70;
+    int32_t listHeight = 350;
+    
+    if (deck && deck->SIZE > 0) {
+        // 移除卡牌數量顯示
+        draw_text("內容:", dialogRect.x + 20, listY, lightblue1, 18);
+        
+        // Scrollable card list
+        int32_t maxVisible = 15; // Maximum visible cards
+        int32_t cardY = listY + 30;
+        
+        for (int32_t i = 0; i < maxVisible && i < deck->SIZE; i++) {
+            const Card* cardData = getCardData(deck->array[i]);
+            if (cardData) {
+                char cardText[100];
+                snprintf(cardText, 100, "%d. %s", i + 1, cardData->name);
+                draw_text(cardText, dialogRect.x + 30, cardY + i * 20, white, 14);
+                
+                // Show card description on the right
+                draw_text(cardData->description, dialogRect.x + 300, cardY + i * 20, gray2, 12);
+            }
+        }
+        
+        if (deck->SIZE > maxVisible) {
+            char moreText[30];
+            snprintf(moreText, 30, "... 還有更多");
+            draw_text(moreText, dialogRect.x + 30, cardY + maxVisible * 20, gray2, 14);
+        }
+    } else {
+        draw_text_center("空的", SCREEN_WIDTH/2, listY + 100, gray2, 24);
+    }
+    
+    // Instructions
+    draw_text_center("點擊視窗外區域關閉", SCREEN_WIDTH/2, dialogRect.y + dialogRect.h - 30, lightblue1, 18);
+}
+
+void draw_battle_ui_stage() {
+    // Clear screen with main background color
+    SDL_SetRenderDrawColor(uiBase.renderer, 30, 30, 30, 255);
+    SDL_RenderClear(uiBase.renderer);
+    
+    // Update hover states (移除對手手牌懸停狀態)
+    battleUIStage.hoveringShop = (battleUIStage.shopButton && mouse_in_button(battleUIStage.shopButton));
+    battleUIStage.hoveringOpponentDeck = (battleUIStage.opponentDeckButton && mouse_in_button(battleUIStage.opponentDeckButton));
+    battleUIStage.hoveringOpponentGrave = (battleUIStage.opponentGraveButton && mouse_in_button(battleUIStage.opponentGraveButton));
+    battleUIStage.hoveringMyGrave = (battleUIStage.myGraveButton && mouse_in_button(battleUIStage.myGraveButton));
+    
+    // Draw three columns
+    draw_left_column_stage();
+    draw_middle_column_stage();
+    draw_right_column_stage();
+    
+    // Draw hover previews
+    int32_t mouseX, mouseY;
+    SDL_GetMouseState(&mouseX, &mouseY);
+    
+    if (battleUIStage.hoveringShop && !battleUIStage.showShopPopup) {
+        draw_hover_preview("基礎牌商店", NULL, mouseX, mouseY);
+    }
+    
+    int32_t opponent = (game.now_turn_player_id + 1) % 2;
+    
+    // 對手牌庫懸停預覽
+    if (battleUIStage.hoveringOpponentDeck) {
+        draw_hover_preview("對手牌庫", NULL, mouseX, mouseY);
+    }
+    
+    if (battleUIStage.hoveringOpponentGrave && !battleUIStage.showOpponentGravePopup) {
+        draw_hover_preview("對手棄牌區", &game.players[opponent].graveyard, mouseX, mouseY);
+    }
+    
+    if (battleUIStage.hoveringMyGrave && !battleUIStage.showMyGravePopup) {
+        draw_hover_preview("我的棄牌區", &game.players[game.now_turn_player_id].graveyard, mouseX, mouseY);
+    }
+    
+    // Draw skill hover previews
+    if (battleUIStage.hoveringOpponentSpecial && !battleUIStage.showOpponentSpecialPopup) {
+        draw_hover_preview("對手必殺牌", &game.players[opponent].specialDeck, mouseX, mouseY);
+    }
+    if (battleUIStage.hoveringOpponentAttackSkill && !battleUIStage.showOpponentAttackSkillPopup) {
+        draw_hover_preview("對手攻擊技能", &game.players[opponent].attackSkill, mouseX, mouseY);
+    }
+    if (battleUIStage.hoveringOpponentDefenseSkill && !battleUIStage.showOpponentDefenseSkillPopup) {
+        draw_hover_preview("對手防禦技能", &game.players[opponent].defenseSkill, mouseX, mouseY);
+    }
+    if (battleUIStage.hoveringOpponentMoveSkill && !battleUIStage.showOpponentMoveSkillPopup) {
+        draw_hover_preview("對手移動技能", &game.players[opponent].moveSkill, mouseX, mouseY);
+    }
+    if (battleUIStage.hoveringMySpecial && !battleUIStage.showMySpecialPopup) {
+        draw_hover_preview("我的必殺牌", &game.players[game.now_turn_player_id].specialDeck, mouseX, mouseY);
+    }
+    if (battleUIStage.hoveringMyAttackSkill && !battleUIStage.showMyAttackSkillPopup) {
+        draw_hover_preview("我的攻擊技能", &game.players[game.now_turn_player_id].attackSkill, mouseX, mouseY);
+    }
+    if (battleUIStage.hoveringMyDefenseSkill && !battleUIStage.showMyDefenseSkillPopup) {
+        draw_hover_preview("我的防禦技能", &game.players[game.now_turn_player_id].defenseSkill, mouseX, mouseY);
+    }
+    if (battleUIStage.hoveringMyMoveSkill && !battleUIStage.showMyMoveSkillPopup) {
+        draw_hover_preview("我的移動技能", &game.players[game.now_turn_player_id].moveSkill, mouseX, mouseY);
+    }
+    
+    // Draw popups (on top of everything)
+    if (battleUIStage.showShopPopup) {
+        draw_shop_popup();
+    }
+    
+    if (battleUIStage.showOpponentGravePopup) {
+        draw_deck_popup("對手棄牌區", &game.players[opponent].graveyard, NULL);
+    }
+    
+    if (battleUIStage.showMyGravePopup) {
+        draw_deck_popup("我的棄牌區", &game.players[game.now_turn_player_id].graveyard, NULL);
+    }
+    
+    // Draw skill popups
+    if (battleUIStage.showOpponentSpecialPopup) {
+        draw_deck_popup("對手必殺牌", &game.players[opponent].specialDeck, NULL);
+    }
+    if (battleUIStage.showOpponentAttackSkillPopup) {
+        draw_deck_popup("對手攻擊技能", &game.players[opponent].attackSkill, NULL);
+    }
+    if (battleUIStage.showOpponentDefenseSkillPopup) {
+        draw_deck_popup("對手防禦技能", &game.players[opponent].defenseSkill, NULL);
+    }
+    if (battleUIStage.showOpponentMoveSkillPopup) {
+        draw_deck_popup("對手移動技能", &game.players[opponent].moveSkill, NULL);
+    }
+    if (battleUIStage.showMySpecialPopup) {
+        draw_deck_popup("我的必殺牌", &game.players[game.now_turn_player_id].specialDeck, NULL);
+    }
+    if (battleUIStage.showMyAttackSkillPopup) {
+        draw_deck_popup("我的攻擊技能", &game.players[game.now_turn_player_id].attackSkill, NULL);
+    }
+    if (battleUIStage.showMyDefenseSkillPopup) {
+        draw_deck_popup("我的防禦技能", &game.players[game.now_turn_player_id].defenseSkill, NULL);
+    }
+    if (battleUIStage.showMyMoveSkillPopup) {
+        draw_deck_popup("我的移動技能", &game.players[game.now_turn_player_id].moveSkill, NULL);
+    }
+    
+    // Draw focus mode overlay if active
+    if(battleUIStage.focusMode) {
+        // Semi-transparent overlay
+        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+        SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+        SDL_RenderFillRect(uiBase.renderer, &overlay);
+        
+        // Focus instruction - 24px font
+        draw_text_center("專注模式：選擇一張牌移除", SCREEN_WIDTH/2, 50, white, 24);
+        draw_text_center("點擊手牌或棄牌堆中的牌，再次點擊確認選擇", SCREEN_WIDTH/2, 80, lightblue1, 18);
+        draw_text_center("按 ESC 取消", SCREEN_WIDTH/2, 110, gray2, 16);
+    }
+    
+    SDL_RenderPresent(uiBase.renderer);
+}
+
+void draw_shop_popup() {
+    // Semi-transparent overlay
+    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+    SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+    SDL_RenderFillRect(uiBase.renderer, &overlay);
+    
+    // Main popup window - adjusted size to fit properly
+    SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 450, SCREEN_HEIGHT/2 - 250, 900, 500};
+    SDL_SetRenderDrawColor(uiBase.renderer, 64, 64, 64, 255);
+    SDL_RenderFillRect(uiBase.renderer, &dialogRect);
+    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(uiBase.renderer, &dialogRect);
+    
+    // Title
+    draw_text_center("基礎牌商店", SCREEN_WIDTH/2, dialogRect.y + 30, white, 32);
+    
+    // Show current player's energy
+    char energyText[50];
+    snprintf(energyText, 50, "我的能量: %d/25", game.players[game.now_turn_player_id].energy);
+    draw_text_center(energyText, SCREEN_WIDTH/2, dialogRect.y + 70, lightblue1, 24);
+    
+    // Draw basic card types in columns - adjusted layout
+    int32_t colWidth = 200;
+    int32_t startX = dialogRect.x + 50;
+    int32_t startY = dialogRect.y + 120;
+    
+    const char* cardTypes[] = {"攻擊牌", "防禦牌", "移動牌", "通用牌"};
+    
+    for (int32_t type = 0; type < 4; type++) {
+        int32_t colX = startX + type * colWidth;
+        
+        // Column title
+        draw_text_center(cardTypes[type], colX + colWidth/2, startY, lightblue1, 20);
+        
+        // 通用牌只顯示一種
+        int32_t maxLevel = (type == 3) ? 1 : 3;
+        
+        // Draw cards for each level
+        for (int32_t level = 1; level <= maxLevel; level++) {
+            int32_t cardY = startY + 40 + (level - 1) * 70; // Reduced spacing to fit window
+            
+            // Card background
+            SDL_Rect cardRect = {colX + 10, cardY, colWidth - 20, 60}; // Reduced height
+            SDL_SetRenderDrawColor(uiBase.renderer, 80, 80, 80, 255);
+            SDL_RenderFillRect(uiBase.renderer, &cardRect);
+            SDL_SetRenderDrawColor(uiBase.renderer, 200, 200, 200, 255);
+            SDL_RenderDrawRect(uiBase.renderer, &cardRect);
+            
+            // Card info
+            int32_t cardId = (type == 3) ? 10 : (type * 3 + level); // 通用牌ID=10
+            
+            const Card* cardData = getCardData(cardId);
+            if (cardData) {
+                draw_text_center(cardData->name, colX + colWidth/2, cardY + 10, white, 12);
+                
+                char costText[20];
+                snprintf(costText, 20, "費用: %d", cardData->cost);
+                draw_text_center(costText, colX + colWidth/2, cardY + 25, lightblue1, 11);
+                
+                // Show remaining count - 使用正確的vector size
+                char countText[30];
+                if (type < 3) {
+                    snprintf(countText, 30, "剩餘: %d張", game.basicBuyDeck[type][level-1].SIZE);
+                } else {
+                    snprintf(countText, 30, "剩餘: %d張", game.basicBuyDeck[3][0].SIZE);
+                }
+                draw_text_center(countText, colX + colWidth/2, cardY + 40, gray2, 10);
+            }
+        }
+        
+        // Show total available count for this type - moved position
+        if (type < 3) {
+            char availText[30];
+            int32_t totalCount = game.basicBuyDeck[type][0].SIZE + 
+                               game.basicBuyDeck[type][1].SIZE + 
+                               game.basicBuyDeck[type][2].SIZE;
+            snprintf(availText, 30, "總計: %d張", totalCount);
+            draw_text_center(availText, colX + colWidth/2, startY + 250, gray2, 12);
+        } else {
+            char availText[30];
+            snprintf(availText, 30, "總計: %d張", game.basicBuyDeck[3][0].SIZE);
+            draw_text_center(availText, colX + colWidth/2, startY + 180, gray2, 12);
+        }
+    }
+    
+    // Instructions
+    draw_text_center("點擊視窗外區域關閉", SCREEN_WIDTH/2, dialogRect.y + dialogRect.h - 30, lightblue1, 18);
 }

@@ -28,8 +28,23 @@ int check_game_winner(){
     return 0;
 }
 
-int beginning_phase(){
+int beginning_phase() {
     sPlayer *pCurrentPlayer = &(game.players[game.now_turn_player_id]);
+    
+    DEBUG_PRINT("--- Beginning Phase ---\n");
+    DEBUG_PRINT("Current Player ID: %d\n", game.now_turn_player_id);
+    DEBUG_PRINT("Character: %d\n", pCurrentPlayer->character);
+    DEBUG_PRINT("Life: %d/%d\n", pCurrentPlayer->life, pCurrentPlayer->maxlife);
+    DEBUG_PRINT("Defense: %d/%d\n", pCurrentPlayer->defense, pCurrentPlayer->maxdefense);
+    DEBUG_PRINT("Energy: %d\n", pCurrentPlayer->energy);
+    DEBUG_PRINT_VEC(&pCurrentPlayer->hand, "Hand Cards");
+    DEBUG_PRINT_VEC(&pCurrentPlayer->deck, "Deck Cards");
+    DEBUG_PRINT_VEC(&pCurrentPlayer->graveyard, "Graveyard Cards");
+    DEBUG_PRINT_VEC(&pCurrentPlayer->metamorphosis, "Metamorphosis Cards");
+    DEBUG_PRINT_VEC(&pCurrentPlayer->attackSkill, "Attack Skills");
+    DEBUG_PRINT_VEC(&pCurrentPlayer->defenseSkill, "Defense Skills");
+    DEBUG_PRINT_VEC(&pCurrentPlayer->moveSkill, "Move Skills");
+    DEBUG_PRINT_VEC(&pCurrentPlayer->specialDeck, "Special Deck");
     
     // 統計回合數 (只在玩家1的回合開始時增加，避免重複計算)
     if(game.now_turn_player_id == 0) {

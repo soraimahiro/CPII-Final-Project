@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include "architecture.h"
 
 typedef struct _sUiBase {
     SDL_Window *window;
@@ -15,6 +16,7 @@ typedef struct _sUiBase {
 // text
 void draw_text(const char* text, int32_t x, int32_t y, SDL_Color color, int32_t font_size);
 void draw_text_center(const char* text, int32_t x, int32_t y, SDL_Color color, int32_t font_size);
+void draw_text_wrapped(const char* text, int32_t x, int32_t y, SDL_Color color, int32_t font_size, int32_t max_width);
 
 // button
 typedef struct {
