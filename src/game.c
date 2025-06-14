@@ -440,6 +440,28 @@ void attack(sPlayer* defender, int total_damage) {
     }
 }
 
+void defend(sPlayer* player, int total_defense) {
+    player->defense += total_defense;
+    if (player->defense > player->maxdefense) player->defense = player->maxdefense;
+}
+
+void move(sPlayer* player, int total_move) {
+    printf("\nChoose direction (-1: left, 1: right): ");
+    int direction;
+    while (total_move > 0) {
+        scanf("%d", &direction);
+        player->locate[0] += direction;
+
+        if (total_move == 1 && player->locate[0] == &game.players[0] && player->locate[0]-1 == &game.players[1]) {
+            printf("不能與對手同一格\n");
+            player->locate[0] -= direction;
+        }
+        else total_move--;
+        if (player->locate[0] < 1) player->locate[0] = 1;
+        else if (player->locate[0] > 9) player->locate[0] = 9;
+    }
+}
+
 // Attack action
 void handle_attack(sPlayer* attacker, sPlayer* defender) {
     //TODO: 射程 1
@@ -457,7 +479,7 @@ void handle_attack(sPlayer* attacker, sPlayer* defender) {
         
         if (choice == 0) {
             continue_attack = false;
-            continue;
+            break;
         }
         
         if (choice < 1 || choice > attacker->hand.SIZE) {
@@ -551,10 +573,7 @@ void handle_defense(sPlayer* player) {
     
     if (total_defense > 0) {
         // Apply defense
-        player->defense += total_defense;
-        if (player->defense > player->maxdefense) {
-            player->defense = player->maxdefense;
-        }
+        defend(player, total_defense);
         
         // Add energy
         player->energy += total_energy;
@@ -613,22 +632,7 @@ void handle_move(sPlayer* player) {
     
     if (total_move > 0) {
         // Apply movement
-    printf("\nChoose direction (1: left, 2: right): ");
-        int direction;
-        scanf("%d", &direction);
-        
-        int new_position = player->locate[0];
-        if (direction == 1) {
-            new_position -= total_move;
-        } else {
-            new_position += total_move;
-        }
-        
-        // Check boundaries
-        if (new_position < 1) new_position = 1;
-        if (new_position > 9) new_position = 9;
-        
-        player->locate[0] = new_position;
+        move(player, total_move);
         
         // Add energy
         player->energy += total_energy;
