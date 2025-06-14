@@ -456,7 +456,9 @@ void handle_attack(sPlayer* attacker, sPlayer* defender) {
         
         printf("Added %d damage and energy\n", card_value);
     }
-    
+   
+    // TODO: Hua Mu-Lan
+
     if (total_damage > 0) {
         // Apply damage
         if (defender->defense > 0) {
@@ -595,7 +597,7 @@ void handle_move(sPlayer* player) {
     
     if (total_move > 0) {
         // Apply movement
-        printf("\nChoose direction (1: left, 2: right): ");
+    printf("\nChoose direction (1: left, 2: right): ");
         int direction;
         scanf("%d", &direction);
         
@@ -621,6 +623,73 @@ void handle_move(sPlayer* player) {
         printf("Energy Gained: %d\n", total_energy);
         printf("New Position: %d\n", player->locate[0]);
     }
+}
+
+void handle_skills(sPlayer* attacker, sPlayer* defender) {
+    printf("\nSkill Action:\n");
+    print_hand_cards(attacker);
+    
+    int total_damage = 0;
+    int total_defense = 0;
+    int total_move = 0;
+    int total_energy = 0;
+    
+    int choice;
+    while (1) {
+        printf("\nChoose an skill card (1-%d) or 0 to stop: ", attacker->hand.SIZE);
+        
+        scanf("%d", &choice);
+        if (choice == 0)  return;
+        else if (choice < 1 || choice > attacker->hand.SIZE) {
+            printf("Invalid choice!\n");
+            continue;
+        }
+        else break; // TODO: check if type is skill
+    }
+        
+    // Get the selected card
+    int32_t skill_card_id = attacker->hand.array[choice - 1];
+    const Card* skill_card = getCardData(skill_card_id);
+        
+    //TODO: 檢查是否為技能牌    
+
+    pushbackVector(&attacker->usecards, skill_card_id);
+    eraseVector(&attacker->hand, choice - 1);
+
+    int32_t basic_card_id = -1;
+    
+    while (1) {
+        printf("\nChoose an basic card (1-%d) or 0 to stop: ", attacker->hand.SIZE);
+        scanf("%d", &choice);
+            
+        if (choice == 0)  return;
+        else if (choice < 1 || choice > attacker->hand.SIZE) {
+            printf("Invalid choice!\n");
+            continue;
+        }
+        else {
+            basic_card_id = attacker->hand.array[choice - 1];
+            const Card* basic_card = getCardData(basic_card_id);
+            if (basic_card->type != TYPE_BASIC && basic_card->type != skill_card->type) {
+                printf("basic_card->type != skill_card->type\n");
+                continue;
+            }
+            else break;
+        }
+    }
+    const Card* basic_card = getCardData(basic_card_id);
+
+ 
+    pushbackVector(&attacker->usecards, basic_card_id);
+    eraseVector(&attacker->hand, choice - 1);
+        
+   
+    // TODO: Hua Mu-Lan
+
+    switch (skill_card_id) {
+        // case SKILL: skill01(skill_card, basic_card->level);
+    }
+
 }
 
 // 抽牌函數
@@ -661,8 +730,6 @@ void draw_card(sPlayer* player, int count) {
 void game_play_logic() {
     static bool first_render = true;
     static bool waiting_for_input = true;
-    static bool is_first_turn_player1 = true;  // 用於追蹤第一位玩家的第一回合
-    static bool is_first_turn_player2 = true;  // 用於追蹤第二位玩家的第一回合
     
     // 獲取當前玩家和對手
     sPlayer* current_player = &game.players[game.now_turn_player_id];
@@ -672,30 +739,11 @@ void game_play_logic() {
     
     // 開始階段
     printf("\n=== Start Phase ===\n");
-    // 抽牌
-    if (game.now_turn_player_id == 0) {
-        if (is_first_turn_player1) {
-            printf("First player's first turn: Initial draw already done\n");
-            is_first_turn_player1 = false;
-        } else {
-            printf("Draw 6 cards\n");
-            draw_card(current_player, 6);
-        }
-    } else {
-        if (is_first_turn_player2) {
-            printf("Second player's first turn: Initial draw already done\n");
-            is_first_turn_player2 = false;
-        } else {
-            printf("Draw 6 cards\n");
-            draw_card(current_player, 6);
-        }
-    }
+     
     
     // 清理階段
-    printf("\n=== Cleanup Phase ===\n");
-    printf("Reset energy to 0\n");
-    current_player->energy = 0;
-    
+    refresh_phase(); 
+
     // 行動階段
     bool action_phase_end = false;
     while (!action_phase_end) {
@@ -735,7 +783,7 @@ void game_play_logic() {
                 
             case 5: // Use Skill
                 printf("Use Skill: Choose a skill card to use\n");
-                // TODO: Implement skill usage
+                handle_skills(current_player, opponent);
                 break;
                 
             case 6: // Use Ultimate
@@ -782,15 +830,12 @@ void game_play_logic() {
     // 3. 重置能量
     current_player->energy = 0;
     printf("Energy reset to 0\n");
-    
-    // 4. 切換玩家
+    // 4. 抽牌
+    printf("Draw 6 cards\n");
+    draw_card(current_player, 6);
+    // 5. 切換玩家
     game.now_turn_player_id = (game.now_turn_player_id + 1) % 2;
     printf("Turn ended. Next player's turn.\n");
-    
-    // 5. 重置遊戲狀態
-    game.status = CHOOSE_MOVE;
-    
-    // 6. 重置靜態變數，準備下一個回合
     first_render = true;
     waiting_for_input = true;
 }
