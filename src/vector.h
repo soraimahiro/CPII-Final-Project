@@ -11,12 +11,12 @@
 
 #ifdef DEBUG
 #define DEBUG_PRINT_VEC(vec, fmt, ...) do { \
-    fprintf(stderr, "[DEBUG] " fmt " (size=%u): [", ##__VA_ARGS__, (vec)->SIZE); \
+    fprintf(stdout, "[DEBUG] " fmt " (size=%u): [", ##__VA_ARGS__, (vec)->SIZE); \
     for (int32_t vec_idx = 0; vec_idx < (vec)->SIZE; vec_idx++) { \
-        fprintf(stderr, "%d", (vec)->array[vec_idx]); \
-        if (vec_idx < (vec)->SIZE - 1) fprintf(stderr, ", "); \
+        fprintf(stdout, "%d", (vec)->array[vec_idx]); \
+        if (vec_idx < (vec)->SIZE - 1) fprintf(stdout, ", "); \
     } \
-    fprintf(stderr, "]\n"); \
+    fprintf(stdout, "]\n"); \
 } while(0)
 #else
 #define DEBUG_PRINT_VEC(vec, fmt, ...) ((void)0)

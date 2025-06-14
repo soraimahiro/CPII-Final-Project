@@ -118,10 +118,12 @@ void setup_basic_supply_decks() {
 
 // 初始抽牌
 void initial_draw() {
+    DEBUG_PRINT("initial draw\n");
     // 玩家1抽4張
     for (int i = 0; i < 4; i++) {
         int32_t card;
-        if (getVectorTop(&game.players[0].deck, &card) == 0) {
+        if (getVectorTop(&game.players[0].deck, &card)) {
+            DEBUG_PRINT("draw one card: %d\n", card);
             pushbackVector(&game.players[0].hand, card);
             popbackVector(&game.players[0].deck);
         } else {
@@ -132,7 +134,8 @@ void initial_draw() {
     // 玩家2抽6張
     for (int i = 0; i < 6; i++) {
         int32_t card;
-        if (getVectorTop(&game.players[1].deck, &card) == 0) {
+        if (getVectorTop(&game.players[1].deck, &card)) {
+            DEBUG_PRINT("draw one card: %d\n", card);
             pushbackVector(&game.players[1].hand, card);
             popbackVector(&game.players[1].deck);
         } else {
@@ -182,6 +185,117 @@ void game_init() {
     // 4. 設置遊戲狀態
     game.now_turn_player_id = 0;  // 玩家1先攻
     game.status = CHOOSE_MOVE;    // 從選擇移動開始
+
+    // Debug output - print all game.players information
+    DEBUG_PRINT("=== GAME INITIALIZATION DEBUG INFO ===\n");
+    DEBUG_PRINT("Player Mode: %s\n", game.playerMode == 0 ? "1v1" : "2v2");
+    DEBUG_PRINT("Current Turn Player: %d\n", game.now_turn_player_id);
+    DEBUG_PRINT("Game Status: %d\n", game.status);
+    
+    int32_t playerCount = TOTAL_PLAYER;
+    for(int32_t i = 0; i < playerCount; i++){
+        DEBUG_PRINT("\n");
+        DEBUG_PRINT("--- Player %d ---\n", i);
+        DEBUG_PRINT("isBOT: %s\n", game.players[i].isBOT ? "true" : "false");
+        DEBUG_PRINT("team: %d\n", game.players[i].team);
+        DEBUG_PRINT("character: %d\n", game.players[i].character);
+        DEBUG_PRINT("locate: [%d, %d]\n", game.players[i].locate[0], game.players[i].locate[1]);
+        DEBUG_PRINT("maxlife: %d, life: %d\n", game.players[i].maxlife, game.players[i].life);
+        DEBUG_PRINT("maxdefense: %d, defense: %d\n", game.players[i].maxdefense, game.players[i].defense);
+        DEBUG_PRINT("energy: %d\n", game.players[i].energy);
+        DEBUG_PRINT("specialGate: %d\n", game.players[i].specialGate);
+        
+        // Print all vectors
+        DEBUG_PRINT_VEC(&game.players[i].hand, "hand");
+        DEBUG_PRINT_VEC(&game.players[i].deck, "deck");
+        DEBUG_PRINT_VEC(&game.players[i].usecards, "usecards");
+        DEBUG_PRINT_VEC(&game.players[i].graveyard, "graveyard");
+        DEBUG_PRINT_VEC(&game.players[i].metamorphosis, "metamorphosis");
+        DEBUG_PRINT_VEC(&game.players[i].attackSkill, "attackSkill");
+        DEBUG_PRINT_VEC(&game.players[i].defenseSkill, "defenseSkill");
+        DEBUG_PRINT_VEC(&game.players[i].moveSkill, "moveSkill");
+        DEBUG_PRINT_VEC(&game.players[i].specialDeck, "specialDeck");
+        
+        // Print character-specific data based on character type
+        switch(game.players[i].character) {
+            case CHARACTER_REDHOOD:
+                DEBUG_PRINT("Red Hood - saveCard: [%d, %d, %d]\n", 
+                    game.players[i].redHood.saveCard[0], 
+                    game.players[i].redHood.saveCard[1], 
+                    game.players[i].redHood.saveCard[2]);
+                break;
+                
+            case CHARACTER_SNOWWHITE:
+                DEBUG_PRINT_VEC(&game.players[i].snowWhite.remindPosion, "Snow White remindPosion");
+                break;
+                
+            case CHARACTER_SLEEPINGBEAUTY:
+                DEBUG_PRINT("Sleeping Beauty - AWAKEN_TOKEN: %u, AWAKEN: %d, dayNightmareDrawRemind: %d\n",
+                    game.players[i].sleepingBeauty.AWAKEN_TOKEN,
+                    game.players[i].sleepingBeauty.AWAKEN,
+                    game.players[i].sleepingBeauty.dayNightmareDrawRemind);
+                DEBUG_PRINT("Sleeping Beauty - atkRise: %d, atkRiseTime: %d, usedmeta1: %d\n",
+                    game.players[i].sleepingBeauty.atkRise,
+                    game.players[i].sleepingBeauty.atkRiseTime,
+                    game.players[i].sleepingBeauty.usedmeta1);
+                break;
+                
+            case CHARACTER_ALICE:
+                DEBUG_PRINT("Alice - identity: %d, riseBasic: %d, restartTurn: %d, havedrestart: %d\n",
+                    game.players[i].alice.identity,
+                    game.players[i].alice.riseBasic,
+                    game.players[i].alice.restartTurn,
+                    game.players[i].alice.havedrestart);
+                break;
+                
+            case CHARACTER_MULAN:
+                DEBUG_PRINT("Mulan - KI_TOKEN: %u, extraCard: %d, extraDraw: %d\n",
+                    game.players[i].mulan.KI_TOKEN,
+                    game.players[i].mulan.extraCard,
+                    game.players[i].mulan.extraDraw);
+                break;
+                
+            case CHARACTER_KAGUYA:
+                DEBUG_PRINT("Kaguya - useDefenseAsATK: %d, useMoveTarget: %d\n",
+                    game.players[i].kaguya.useDefenseAsATK,
+                    game.players[i].kaguya.useMoveTarget);
+                break;
+                
+            case CHARACTER_MATCHGIRL:
+                DEBUG_PRINT("Match Girl - remindMatch: %u, pushedMatch: %u\n",
+                    game.players[i].matchGirl.remindMatch,
+                    game.players[i].matchGirl.pushedMatch);
+                break;
+                
+            case CHARACTER_DOROTHY:
+                DEBUG_PRINT("Dorothy - COMBO_TOKEN: %u, canCombo: %d\n",
+                    game.players[i].dorothy.COMBO_TOKEN,
+                    game.players[i].dorothy.canCombo);
+                break;
+                
+            case CHARACTER_SCHEHERAZADE:
+                DEBUG_PRINT_VEC(&game.players[i].scheherazade.destiny_TOKEN_locate, "Scheherazade destiny_TOKEN_locate");
+                DEBUG_PRINT_VEC(&game.players[i].scheherazade.destiny_TOKEN_type, "Scheherazade destiny_TOKEN_type");
+                DEBUG_PRINT("Scheherazade - selectToken: %d\n", game.players[i].scheherazade.selectToken);
+                break;
+                
+            default:
+                DEBUG_PRINT("Unknown character or no special data\n");
+                break;
+        }
+    }
+    
+    // Print basic supply decks
+    DEBUG_PRINT("\n");
+    DEBUG_PRINT("--- Basic Supply Decks ---\n");
+    const char* deckNames[] = {"Attack", "Defense", "Move", "Universal"};
+    for(int i = 0; i < 4; i++) {
+        for(int j = 0; j < 3; j++) {
+            DEBUG_PRINT_VEC(&game.basicBuyDeck[i][j], "%s LV%d", deckNames[i], j+1);
+        }
+    }
+    
+    DEBUG_PRINT("=== END GAME INITIALIZATION DEBUG ===\n\n");
 }
 
 void init_character(sPlayer* p){
