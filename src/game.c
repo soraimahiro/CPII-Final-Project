@@ -452,7 +452,7 @@ void move(sPlayer* player, int total_move) {
         scanf("%d", &direction);
         player->locate[0] += direction;
 
-        if (total_move == 1 && player->locate[0] == &game.players[0] && player->locate[0]-1 == &game.players[1]) {
+        if (total_move == 1 && player->locate[0] == game.players[0].locate[0] && player->locate[0] == game.players[1].locate[0]) {
             printf("不能與對手同一格\n");
             player->locate[0] -= direction;
         }
