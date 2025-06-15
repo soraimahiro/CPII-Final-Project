@@ -429,6 +429,13 @@ void print_hand_cards(sPlayer* player) {
 }
 
 void attack(sPlayer* defender, int total_damage) {
+    sPlayer* attacker = game.players[game.now_turn_player_id];
+    if (attacker->character == CHARACTER_SLEEPINGBEAUTY) {
+        if (attacker->sleepingBeauty.atkRiseTime) {
+            total_damage += attacker->sleepingBeauty.atkRise;
+            attacker->sleepingBeauty.atkRiseTime -= 1;
+        }
+    }
     if (defender->character == CHARACTER_MULAN) {
         total_damage -= ki(defender);
         if (total_damage < 0) total_damage = 0;
@@ -451,6 +458,9 @@ void attack(sPlayer* defender, int total_damage) {
     // TODO: if (defender->life <= defender->specialGate) 必殺技();
 
     if (remaining_damage) {
+        if (attacker->character == CHARACTER_SLEEPINGBEAUTY) {
+            attacker->sleepingBeauty.caused_damage += remaining_damage;
+        }
         if (defender->character == CHARACTER_SLEEPINGBEAUTY) {
             if (!defender->sleepingBeauty.AWAKEN) {
                 defender->sleepingBeauty.AWAKEN_TOKEN += remaining_damage;
@@ -743,7 +753,17 @@ void handle_skills(sPlayer* attacker, sPlayer* defender) {
         }
     }
     else if (skill_card_id <= 43) {
-        if (handle_sleepingbeauty_skills(attacker, defender, skill_card, basic_card->level)) {
+        int level = basic_card->level;
+        if (!(attacker->sleepingBeauty.usedmeta1 & 0b10) && countCard(&attacker->metamorphosis, CARD_SLEEPINGBEAUTY_METAMORPH1_BLOODLETTING)) {
+            int choice;
+            printf("放血療法(0/2/4/6): ");
+            scanf("%d", &choice);
+            if (!choice) {
+                level = choice / 2; 
+                attacker->sleepingBeauty.usedmeta1 ^= 0b10;
+            }
+        }
+        if (handle_sleepingbeauty_skills(attacker, defender, skill_card, level)) {
             printf("range not enough\n");
             return;
         }
@@ -974,12 +994,83 @@ void game_play_logic() {
                                 else continue;
                             }
                         }
-                        break;
+                        else {
+                            printf("no available skills\n");
+                            break;
+                        }
+                    }
+                    case CHARACTER_SLEEPINGBEAUTY: {
+                        int value = countCard(&current_player->metamorphosis, CARD_SLEEPINGBEAUTY_METAMORPH2_BLOOD_RITUAL);
+                        if (!(current_player->sleepingBeauty.usedmeta1 & 0b01) && value) {
+                            int damage = current_player->sleepingBeauty.caused_damage;
+                            int max_level = 0;
+                            
+                            // 根據傷害決定可拿的牌等級
+                            if (damage >= 6) max_level = 3;
+                            else if (damage >= 4) max_level = 2;
+                            else if (damage >= 2) max_level = 1;
+                            
+                            if (max_level > 0) {
+                                printf("血祭之禮(max lv: %d)\n", max_level);
+                                // 檢查棄牌堆中是否有符合條件的牌
+                                int has_valid_card = 0;
+                                for (int i = 0; i < current_player->graveyard.SIZE; i++) {
+                                    int32_t card_id = current_player->graveyard.array[i];
+                                    const Card* card = getCardData(card_id);
+                                    if (card->type == TYPE_ATTACK && card->level <= max_level) {
+                                        has_valid_card = 1;
+                                        break;
+                                    }
+                                }
+                                
+                                if (has_valid_card) {
+                                    printf("棄牌堆中的攻擊牌：\n");
+                                    for (int i = 0; i < current_player->graveyard.SIZE; i++) {
+                                        int32_t card_id = current_player->graveyard.array[i];
+                                        const Card* card = getCardData(card_id);
+                                        if (card->type == TYPE_ATTACK && card->level <= max_level) {
+                                            printf("%d. %s (Lv%d)\n", i + 1, card->name, card->level);
+                                        }
+                                    }
+                                    
+                                    int choice;
+                                    while (1) {
+                                        printf("\n選擇要加入手牌的牌 (1-%d): ", current_player->graveyard.SIZE);
+                                        scanf("%d", &choice);
+                                        
+                                        if (!choice) break;
+                                        if (choice < 0 || choice > current_player->graveyard.SIZE) {
+                                            printf("無效的選擇！\n");
+                                            continue;
+                                        }
+                                        
+                                        int32_t selected_card = current_player->graveyard.array[choice - 1];
+                                        const Card* card = getCardData(selected_card);
+                                        
+                                        if (card->type != TYPE_ATTACK || card->level > max_level) {
+                                            printf("只能選擇等級不超過 Lv%d 的攻擊牌！\n", max_level);
+                                            continue;
+                                        }
+                                        
+                                        // 將選擇的牌加入手牌
+                                        pushbackVector(&current_player->hand, selected_card);
+                                        eraseVector(&current_player->graveyard, choice - 1);
+                                        printf("已將 %s 加入手牌\n", card->name);
+                                        break;
+                                    }
+                                } else {
+                                    printf("棄牌堆中沒有符合條件的攻擊牌！\n");
+                                }
+                            }
+                            current_player->sleepingBeauty.usedmeta1 ^= 0b01;
+                        }
                     }
                     default:
                         break;
                 }
-                break;
+                default:
+                    printf("no available skills\n");
+                    break;
                 
             case -1: // Exit Game
                 change_state(GAME_MENU);

@@ -56,7 +56,7 @@ typedef struct _sPlayer {
         int8_t dayNightmareDrawRemind;
         int32_t atkRise;
         int32_t atkRiseTime;
-        int8_t usedmeta1; // 放血療法 & 血祭之禮
+        int8_t usedmeta1; // 放血療法 & 血祭之禮 0b11
         int caused_damage; // 血祭之禮 2 4 6
     } sleepingBeauty;
 

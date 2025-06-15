@@ -230,19 +230,41 @@ int handle_redhood_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ul
 }
 
 int handle_sleepingbeauty_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level) {
+    int cost_token = 0;
     // TODO: 是否花費 TOKEN
     int distance = abs(attacker->locate[0] - defender->locate[0]);
     switch (skill_card->id) {
-        case CARD_SNOWWHITE_ATK1_CRYSTAL_SHARD:
-        case CARD_SNOWWHITE_ATK2_CRYSTAL_VORTEX:
-        case CARD_SNOWWHITE_ATK3_CRYSTAL_STORM: {
-
+        case CARD_SLEEPINGBEAUTY_ATK1_MIND_SHOCK:
+        case CARD_SLEEPINGBEAUTY_ATK2_MIND_RAGE:
+        case CARD_SLEEPINGBEAUTY_ATK3_MIND_FURY: {
+            if (abs(attacker->locate[0] - defender->locate[0]) == 1) {
+                int choice;
+                printf("犧牲血量(0-%d): ", skill_card->level);
+                scanf("%d", &choice);
+                attack(attacker, choice);
+                attack(defender, skill_card->level * level + choice);
+                return 0;
+            }
+            else return -1;
+        }
+        case CARD_SLEEPINGBEAUTY_DEF1_BURST_CHAIN:
+        case CARD_SLEEPINGBEAUTY_DEF2_BURST_BONE:
+        case CARD_SLEEPINGBEAUTY_DEF3_BURST_SOUL: {
+            attacker->sleepingBeauty.atkRise = skill_card->level;
+            attacker->sleepingBeauty.atkRiseTime = cost_token + level;
+            return 0;
+        }
+        case CARD_SLEEPINGBEAUTY_MOVE1_DARK_TOUCH:
+        case CARD_SLEEPINGBEAUTY_MOVE2_DARK_ENTANGLE:
+        case CARD_SLEEPINGBEAUTY_MOVE3_DARK_STRANGLE: {
+            if (distance > skill_card->level + 1) return -1;
+            knockback(attacker, defender, (-1 * level));
+            attack(defender, level + cost_token);
+            return 0;
         }
         default:
-            break;
-
+            return -1;
     }
-    return 0;
 }
 
 int handle_sleepingbeauty_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card) {

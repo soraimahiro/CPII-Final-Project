@@ -31,6 +31,7 @@ int check_game_winner(){
 int beginning_phase() {
     sPlayer *pCurrentPlayer = &(game.players[game.now_turn_player_id]);
     sPlayer *pOpponentPlayer = &(game.players[(game.now_turn_player_id + 1) % 2]);
+    pCurrentPlayer->sleepingBeauty.usedmeta1 = 0;
     
     DEBUG_PRINT("--- Beginning Phase ---\n");
     DEBUG_PRINT("Current Player ID: %d\n", game.now_turn_player_id);
@@ -107,6 +108,12 @@ int activation_phase(){
 int ending_phase(sPlayer* current_player){
     current_player->energy = 0;
     printf("Energy reset to 0\n");
+
+    if (current_player->character == CHARACTER_SLEEPINGBEAUTY) {
+        current_player->sleepingBeauty.atkRise = 0;
+        current_player->sleepingBeauty.atkRiseTime = 0;
+        current_player->sleepingBeauty.caused_damage = 0;
+    }
 
     int32_t card_id = 0;
     for (int i = 0; i < current_player->usecards.SIZE; i++) {
