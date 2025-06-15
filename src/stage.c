@@ -72,6 +72,8 @@ int beginning_phase() {
             pCurrentPlayer->mulan.KI_TOKEN += 1;
         }
     }
+
+    game.set_skill_hand = -1;
     
     return 0;
 }

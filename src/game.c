@@ -627,13 +627,13 @@ void handle_skills(sPlayer* attacker, sPlayer* defender, int basicIndex) {
     
     if (skill_card_id <= 19) {
         if (!handle_redhood_skills(attacker, defender, skill_card, basic_card->level)) {
-            printf("range not enough\n");
+            DEBUG_PRINT("range not enough\n");
             return;
         };
     }
     else if (skill_card_id <= 31) {
-        if (!handle_snowwhite_skills(attacker, defender, skill_card, basic_card->level)) {
-            printf("range not enough\n");
+        if (handle_snowwhite_skills(attacker, defender, skill_card, basic_card->level)) {
+            DEBUG_PRINT("range not enough\n");
             return;
         }
     }
@@ -987,7 +987,7 @@ int activation_phase(int32_t handIndex){
     if (game.set_skill_hand != -1) {
         int32_t skillCardID = current_player->hand.array[game.set_skill_hand];
         const Card* skill_card = getCardData(skillCardID);
-        if (card->type == TYPE_BASIC || skill_card->type == card->type) {
+        if (card->id <= 10 && (card->type == TYPE_BASIC || skill_card->type == card->type)) {
             handle_skills(current_player, opponent, handIndex);
             return 0;
         }

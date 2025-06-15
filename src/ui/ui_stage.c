@@ -1076,9 +1076,100 @@ void draw_hover_preview(const char* title, vector* cards, int32_t mouseX, int32_
 }
 
 void handle_battle_events_stage(SDL_Event* event) {
-    if (event->type == SDL_MOUSEBUTTONDOWN) {
+    if (event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
         int32_t mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
+
+        // 如果卡片詳細信息彈窗正在顯示，檢查是否點擊了彈窗外部
+        if (battleUIStage.showCardDetailPopup) {
+            if(mouse_in_button(battleUIStage.useHandButton)){
+                DEBUG_PRINT("use hand card\n");
+                activation_phase(battleUIStage.selectedCardIndex);
+                SDL_Rect handRect = {LEFT_COLUMN_WIDTH + 10, 600, MIDDLE_COLUMN_WIDTH - 20, 80};
+                init_card_area_buttons(&battleUIStage.handAreaButtons, "手牌", handRect);
+            }
+            SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 - 200, 400, 400};
+            if (mouseX < dialogRect.x || mouseX > dialogRect.x + dialogRect.w ||
+                mouseY < dialogRect.y || mouseY > dialogRect.y + dialogRect.h) {
+                battleUIStage.showCardDetailPopup = false;
+                return;
+            }
+        }
+        // Handle popup close events first
+        bool anyPopupOpen = (battleUIStage.showShopPopup || 
+                           battleUIStage.showOpponentGravePopup || battleUIStage.showMyDeckPopup || 
+                           battleUIStage.showMyGravePopup || battleUIStage.showOpponentSpecialPopup ||
+                           battleUIStage.showOpponentAttackSkillPopup || battleUIStage.showOpponentDefenseSkillPopup ||
+                           battleUIStage.showOpponentMoveSkillPopup || battleUIStage.showMySpecialPopup ||
+                           battleUIStage.showMyAttackSkillPopup || battleUIStage.showMyDefenseSkillPopup ||
+                           battleUIStage.showMyMoveSkillPopup || battleUIStage.showCardDetailPopup);
+        
+        if(anyPopupOpen) {
+            // 檢查是否點擊了彈窗外部
+            SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 450, SCREEN_HEIGHT/2 - 250, 900, 500};
+            if (mouseX < dialogRect.x || mouseX > dialogRect.x + dialogRect.w ||
+                mouseY < dialogRect.y || mouseY > dialogRect.y + dialogRect.h) {
+                // 關閉所有彈窗
+                battleUIStage.showShopPopup = false;
+                battleUIStage.showOpponentGravePopup = false;
+                battleUIStage.showMyDeckPopup = false;
+                battleUIStage.showMyGravePopup = false;
+                battleUIStage.showOpponentSpecialPopup = false;
+                battleUIStage.showOpponentAttackSkillPopup = false;
+                battleUIStage.showOpponentDefenseSkillPopup = false;
+                battleUIStage.showOpponentMoveSkillPopup = false;
+                battleUIStage.showMySpecialPopup = false;
+                battleUIStage.showMyAttackSkillPopup = false;
+                battleUIStage.showMyDefenseSkillPopup = false;
+                battleUIStage.showMyMoveSkillPopup = false;
+                battleUIStage.showCardDetailPopup = false;
+                return;
+            }
+            
+            // 處理商店彈窗中的卡片點擊
+            if (battleUIStage.showShopPopup) {
+                int32_t colWidth = 200;
+                int32_t startX = dialogRect.x + 50;
+                int32_t startY = dialogRect.y + 120;
+                
+                for (int32_t type = 0; type < 4; type++) {
+                    int32_t colX = startX + type * colWidth;
+                    int32_t maxLevel = (type == 3) ? 1 : 3;
+                    
+                    for (int32_t level = 1; level <= maxLevel; level++) {
+                        int32_t cardY = startY + 40 + (level - 1) * 70;
+                        SDL_Rect cardRect = {colX + 10, cardY, colWidth - 20, 60};
+                        
+                        if (mouseX >= cardRect.x && mouseX <= cardRect.x + cardRect.w &&
+                            mouseY >= cardRect.y && mouseY <= cardRect.y + cardRect.h) {
+                            
+                            int32_t cardId = (type == 3) ? 10 : (type * 3 + level);
+                            const Card* cardData = getCardData(cardId);
+                            
+                            if (cardData) {
+                                bool canBuy = false;
+                                if (type < 3) {
+                                    canBuy = game.basicBuyDeck[type][level-1].SIZE > 0 && 
+                                            game.players[game.now_turn_player_id].energy >= cardData->cost;
+                                } else {
+                                    canBuy = game.basicBuyDeck[3][0].SIZE > 0 && 
+                                            game.players[game.now_turn_player_id].energy >= cardData->cost;
+                                }
+                                
+                                if (canBuy) {
+                                    if (type < 3) {
+                                        buyBasicCard(type, level);
+                                    } else {
+                                        buyBasicCard(3, 1);
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+        }
         
         // 處理棄牌堆點擊
         if (battleUIStage.opponentGraveButton && mouse_in_button(battleUIStage.opponentGraveButton)) {
@@ -1192,7 +1283,16 @@ void handle_battle_events_stage(SDL_Event* event) {
         int32_t largeAreaWidth = width / 2 - 20;
         int32_t skillCardWidth = largeAreaWidth / 4;
         int32_t myAreasY = 510;
+
+        // Opponent skill areas
+        int32_t opponentAreasY = 110;
+        SDL_Rect opponentSpecialRect = {middleStartX + 10, opponentAreasY, skillCardWidth, 80};
+        SDL_Rect opponentAttackRect = {middleStartX + 10 + skillCardWidth, opponentAreasY, skillCardWidth, 80};
+        SDL_Rect opponentDefenseRect = {middleStartX + 10 + skillCardWidth * 2, opponentAreasY, skillCardWidth, 80};
+        SDL_Rect opponentMoveRect = {middleStartX + 10 + skillCardWidth * 3, opponentAreasY, skillCardWidth, 80};
         
+        // My skill areas
+        SDL_Rect mySpecialRect = {middleStartX + 10, myAreasY, skillCardWidth, 80};
         SDL_Rect myAttackRect = {middleStartX + 10 + skillCardWidth, myAreasY, skillCardWidth, 80};
         SDL_Rect myDefenseRect = {middleStartX + 10 + skillCardWidth * 2, myAreasY, skillCardWidth, 80};
         SDL_Rect myMoveRect = {middleStartX + 10 + skillCardWidth * 3, myAreasY, skillCardWidth, 80};
@@ -1212,27 +1312,6 @@ void handle_battle_events_stage(SDL_Event* event) {
             battleUIStage.showMyMoveSkillPopup = true;
             return;
         }
-    }
-    
-    if(event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
-        int32_t mouseX, mouseY;
-        SDL_GetMouseState(&mouseX, &mouseY);
-        
-        // 如果卡片詳細信息彈窗正在顯示，檢查是否點擊了彈窗外部
-        if (battleUIStage.showCardDetailPopup) {
-            if(mouse_in_button(battleUIStage.useHandButton)){
-                DEBUG_PRINT("use hand card\n");
-                activation_phase(battleUIStage.selectedCardIndex);
-                SDL_Rect handRect = {LEFT_COLUMN_WIDTH + 10, 600, MIDDLE_COLUMN_WIDTH - 20, 80};
-                init_card_area_buttons(&battleUIStage.handAreaButtons, "手牌", handRect);
-            }
-            SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 - 200, 400, 400};
-            if (mouseX < dialogRect.x || mouseX > dialogRect.x + dialogRect.w ||
-                mouseY < dialogRect.y || mouseY > dialogRect.y + dialogRect.h) {
-                battleUIStage.showCardDetailPopup = false;
-                return;
-            }
-        }
         
         // 處理卡牌區域按鈕事件（優先處理）
         if (handle_card_area_button_events(&battleUIStage.handAreaButtons, event)) {
@@ -1244,81 +1323,7 @@ void handle_battle_events_stage(SDL_Event* event) {
             return;  // 事件已被處理，不繼續處理其他事件
         }
         
-        // Handle popup close events first
-        bool anyPopupOpen = (battleUIStage.showShopPopup || 
-                           battleUIStage.showOpponentGravePopup || battleUIStage.showMyDeckPopup || 
-                           battleUIStage.showMyGravePopup || battleUIStage.showOpponentSpecialPopup ||
-                           battleUIStage.showOpponentAttackSkillPopup || battleUIStage.showOpponentDefenseSkillPopup ||
-                           battleUIStage.showOpponentMoveSkillPopup || battleUIStage.showMySpecialPopup ||
-                           battleUIStage.showMyAttackSkillPopup || battleUIStage.showMyDefenseSkillPopup ||
-                           battleUIStage.showMyMoveSkillPopup || battleUIStage.showCardDetailPopup);
         
-        if(anyPopupOpen) {
-            // 檢查是否點擊了彈窗外部
-            SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 450, SCREEN_HEIGHT/2 - 250, 900, 500};
-            if (mouseX < dialogRect.x || mouseX > dialogRect.x + dialogRect.w ||
-                mouseY < dialogRect.y || mouseY > dialogRect.y + dialogRect.h) {
-                // 關閉所有彈窗
-                battleUIStage.showShopPopup = false;
-                battleUIStage.showOpponentGravePopup = false;
-                battleUIStage.showMyDeckPopup = false;
-                battleUIStage.showMyGravePopup = false;
-                battleUIStage.showOpponentSpecialPopup = false;
-                battleUIStage.showOpponentAttackSkillPopup = false;
-                battleUIStage.showOpponentDefenseSkillPopup = false;
-                battleUIStage.showOpponentMoveSkillPopup = false;
-                battleUIStage.showMySpecialPopup = false;
-                battleUIStage.showMyAttackSkillPopup = false;
-                battleUIStage.showMyDefenseSkillPopup = false;
-                battleUIStage.showMyMoveSkillPopup = false;
-                battleUIStage.showCardDetailPopup = false;
-                return;
-            }
-            
-            // 處理商店彈窗中的卡片點擊
-            if (battleUIStage.showShopPopup) {
-                int32_t colWidth = 200;
-                int32_t startX = dialogRect.x + 50;
-                int32_t startY = dialogRect.y + 120;
-                
-                for (int32_t type = 0; type < 4; type++) {
-                    int32_t colX = startX + type * colWidth;
-                    int32_t maxLevel = (type == 3) ? 1 : 3;
-                    
-                    for (int32_t level = 1; level <= maxLevel; level++) {
-                        int32_t cardY = startY + 40 + (level - 1) * 70;
-                        SDL_Rect cardRect = {colX + 10, cardY, colWidth - 20, 60};
-                        
-                        if (mouseX >= cardRect.x && mouseX <= cardRect.x + cardRect.w &&
-                            mouseY >= cardRect.y && mouseY <= cardRect.y + cardRect.h) {
-                            
-                            int32_t cardId = (type == 3) ? 10 : (type * 3 + level);
-                            const Card* cardData = getCardData(cardId);
-                            
-                            if (cardData) {
-                                bool canBuy = false;
-                                if (type < 3) {
-                                    canBuy = game.basicBuyDeck[type][level-1].SIZE > 0 && 
-                                            game.players[game.now_turn_player_id].energy >= cardData->cost;
-                                } else {
-                                    canBuy = game.basicBuyDeck[3][0].SIZE > 0 && 
-                                            game.players[game.now_turn_player_id].energy >= cardData->cost;
-                                }
-                                
-                                if (canBuy) {
-                                    if (type < 3) {
-                                        buyBasicCard(type, level);
-                                    } else {
-                                        buyBasicCard(3, 1);
-                                    }
-                                }
-                            }
-                            return;
-                        }
-                    }
-                }
-            }
-        }
         
         // 檢查商店按鈕點擊
         if (battleUIStage.shopButton && mouse_in_button(battleUIStage.shopButton)) {
@@ -1326,25 +1331,7 @@ void handle_battle_events_stage(SDL_Event* event) {
             return;
         }
         
-        // Handle skill area clicks
-        int32_t middleStartX = LEFT_COLUMN_WIDTH;
-        int32_t width = MIDDLE_COLUMN_WIDTH;
-        int32_t largeAreaWidth = width / 2 - 20;
-        int32_t skillCardWidth = largeAreaWidth / 4;
         
-        // Opponent skill areas
-        int32_t opponentAreasY = 110;
-        SDL_Rect opponentSpecialRect = {middleStartX + 10, opponentAreasY, skillCardWidth, 80};
-        SDL_Rect opponentAttackRect = {middleStartX + 10 + skillCardWidth, opponentAreasY, skillCardWidth, 80};
-        SDL_Rect opponentDefenseRect = {middleStartX + 10 + skillCardWidth * 2, opponentAreasY, skillCardWidth, 80};
-        SDL_Rect opponentMoveRect = {middleStartX + 10 + skillCardWidth * 3, opponentAreasY, skillCardWidth, 80};
-        
-        // My skill areas
-        int32_t myAreasY = 510;
-        SDL_Rect mySpecialRect = {middleStartX + 10, myAreasY, skillCardWidth, 80};
-        SDL_Rect myAttackRect = {middleStartX + 10 + skillCardWidth, myAreasY, skillCardWidth, 80};
-        SDL_Rect myDefenseRect = {middleStartX + 10 + skillCardWidth * 2, myAreasY, skillCardWidth, 80};
-        SDL_Rect myMoveRect = {middleStartX + 10 + skillCardWidth * 3, myAreasY, skillCardWidth, 80};
         
         // Check skill area clicks
         if (mouseX >= opponentSpecialRect.x && mouseX < opponentSpecialRect.x + opponentSpecialRect.w &&
