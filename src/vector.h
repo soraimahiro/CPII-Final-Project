@@ -32,4 +32,5 @@ void popbackVector(vector* vec);
 int getVectorTop(vector* vec, int32_t* value);
 void clearVector(vector* vec);
 void eraseVector(vector* vec, int index);
+int countCard(vector* vec, int32_t id);
 #endif

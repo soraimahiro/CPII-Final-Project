@@ -49,3 +49,16 @@ void eraseVector(vector* vec, int index) {
     vec->SIZE--;
     vec->array[vec->SIZE] = 0;
 }
+
+int countCard(vector* vec, int32_t id) {
+    if (vec == NULL) {
+        return 0;
+    }
+    int count = 0;
+    for (uint32_t i = 0; i < vec->SIZE; i++) {
+        if (vec->array[i] == id) {
+            count++;
+        }
+    }
+    return count;
+}

@@ -26,6 +26,7 @@ void setup_skill_decks(sPlayer* player);
 void setup_ultimate_cards(sPlayer* player);
 void setup_basic_supply_decks();
 void initial_draw();
+void draw_card(sPlayer* player, int count);
 
 // Game logic functions
 void game_play_logic();  // Main game logic
