@@ -81,6 +81,7 @@ typedef struct {
     // 卡片詳細信息彈窗狀態
     bool showCardDetailPopup;
     int32_t selectedCardIndex;  // 當前選中的卡片索引
+    sButton *useHandButton;
     
     // Hover states
     bool hoveringShop;

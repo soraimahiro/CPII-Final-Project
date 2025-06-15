@@ -376,6 +376,12 @@ void draw_middle_column_stage() {
     // 初始化手牌區域按鈕和反轉牌區域按鈕（如果還沒初始化）
     if (battleUIStage.handAreaButtons.buttonCount == 0) {
         init_card_area_buttons(&battleUIStage.handAreaButtons, "手牌", handRect);
+        
+        SDL_Color textColors[] = {white, white};
+        SDL_Color bgColors[] = {gray1, gray2};
+        SDL_Color borderColors[] = {white, white};
+        SDL_Rect useHandRect = {SCREEN_WIDTH/2 - 100, SCREEN_HEIGHT/2 + 210, 200, 50};
+        battleUIStage.useHandButton = create_button(useHandRect, "使用此牌", textColors, bgColors, borderColors, 20, 2);
     }
     if (battleUIStage.metamorphosisAreaButtons.buttonCount == 0) {
         init_card_area_buttons(&battleUIStage.metamorphosisAreaButtons, "反轉牌", metamorphosisRect);
@@ -540,25 +546,25 @@ void draw_right_column_stage() {
     }
     
     // Opponent metamorphosis display area - 調整位置與我方蛻變牌相同大小
-    int32_t opponentMetamorphY = topStartY + topButtonSpacing * 3 + 10;
-    int32_t bottomButtonsStartY = SCREEN_HEIGHT - (bottomSectionHeight / 6) * 4 - 10;
-    int32_t shopButtonY = centerY - 15;
-    int32_t myMetamorphY = centerY + 50;
+    // int32_t opponentMetamorphY = topStartY + topButtonSpacing * 3 + 10;
+    // int32_t bottomButtonsStartY = SCREEN_HEIGHT - (bottomSectionHeight / 6) * 4 - 10;
+    // int32_t shopButtonY = centerY - 15;
+    // int32_t myMetamorphY = centerY + 50;
     
     // 對手蛻變牌高度與我方蛻變牌相同
-    int32_t myMetamorphHeight = bottomButtonsStartY - myMetamorphY - 10;
-    int32_t opponentMetamorphHeight = shopButtonY - 30 - opponentMetamorphY;
+    // int32_t myMetamorphHeight = bottomButtonsStartY - myMetamorphY - 10;
+    // int32_t opponentMetamorphHeight = shopButtonY - 30 - opponentMetamorphY;
     
     // 使用相同的高度
-    int32_t metamorphHeight = myMetamorphHeight;
+    // int32_t metamorphHeight = myMetamorphHeight;
     
-    SDL_Rect opponentMetamorphRect = {startX + 10, opponentMetamorphY, RIGHT_COLUMN_WIDTH - 20, metamorphHeight};
-    SDL_SetRenderDrawColor(uiBase.renderer, 70, 70, 70, 255);
-    SDL_RenderFillRect(uiBase.renderer, &opponentMetamorphRect);
-    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(uiBase.renderer, &opponentMetamorphRect);
+    // SDL_Rect opponentMetamorphRect = {startX + 10, opponentMetamorphY, RIGHT_COLUMN_WIDTH - 20, metamorphHeight};
+    // SDL_SetRenderDrawColor(uiBase.renderer, 70, 70, 70, 255);
+    // SDL_RenderFillRect(uiBase.renderer, &opponentMetamorphRect);
+    // SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+    // SDL_RenderDrawRect(uiBase.renderer, &opponentMetamorphRect);
     
-    draw_text("對手蛻變牌", startX + 15, opponentMetamorphY + 5, white, 16);
+    // draw_text("對手蛻變牌", startX + 15, opponentMetamorphY + 5, white, 16);
     
     // Basic card shop button (center) - vertically centered
     if(battleUIStage.shopButton) {
@@ -567,13 +573,13 @@ void draw_right_column_stage() {
     }
     
     // My metamorphosis display area - 與對手蛻變牌相同大小
-    SDL_Rect myMetamorphRect = {startX + 10, myMetamorphY, RIGHT_COLUMN_WIDTH - 20, metamorphHeight};
-    SDL_SetRenderDrawColor(uiBase.renderer, 70, 70, 70, 255);
-    SDL_RenderFillRect(uiBase.renderer, &myMetamorphRect);
-    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(uiBase.renderer, &myMetamorphRect);
+    // SDL_Rect myMetamorphRect = {startX + 10, myMetamorphY, RIGHT_COLUMN_WIDTH - 20, metamorphHeight};
+    // SDL_SetRenderDrawColor(uiBase.renderer, 70, 70, 70, 255);
+    // SDL_RenderFillRect(uiBase.renderer, &myMetamorphRect);
+    // SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+    // SDL_RenderDrawRect(uiBase.renderer, &myMetamorphRect);
     
-    draw_text("我的蛻變牌", startX + 15, myMetamorphY + 5, white, 16);
+    // draw_text("我的蛻變牌", startX + 15, myMetamorphY + 5, white, 16);
     
     // Bottom section - my buttons with proper spacing
     int32_t bottomButtonSpacing = bottomSectionHeight / 6;
@@ -1023,7 +1029,11 @@ void handle_battle_events_stage(SDL_Event* event) {
         
         // 如果卡片詳細信息彈窗正在顯示，檢查是否點擊了彈窗外部
         if (battleUIStage.showCardDetailPopup) {
-            SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 - 150, 400, 300};
+            if(mouse_in_button(battleUIStage.useHandButton)){
+                DEBUG_PRINT("use hand card\n");
+                activation_phase(battleUIStage.selectedCardIndex);
+            }
+            SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 - 200, 400, 400};
             if (mouseX < dialogRect.x || mouseX > dialogRect.x + dialogRect.w ||
                 mouseY < dialogRect.y || mouseY > dialogRect.y + dialogRect.h) {
                 battleUIStage.showCardDetailPopup = false;
@@ -1527,14 +1537,6 @@ void draw_battle_ui_stage() {
         draw_deck_popup("我的移動技能", &game.players[game.now_turn_player_id].moveSkill, NULL);
     }
     
-    // 繪製卡片詳細信息彈窗
-    if (battleUIStage.showCardDetailPopup) {
-        const Card* cardData = getCardData(game.players[game.now_turn_player_id].hand.array[battleUIStage.selectedCardIndex]);
-        if (cardData) {
-            draw_card_detail_popup(cardData);
-        }
-    }
-    
     // Draw focus mode overlay if active
     if(battleUIStage.focusMode) {
         // Semi-transparent overlay
@@ -1548,61 +1550,70 @@ void draw_battle_ui_stage() {
         draw_text_center("按 ESC 取消", SCREEN_WIDTH/2, 110, gray2, 16);
     }
     
-    // --- 新增：手牌懸停預覽（在所有UI繪製完畢後）---
-    int32_t handX = battleUIStage.handAreaButtons.areaRect.x;
-    int32_t handY = battleUIStage.handAreaButtons.areaRect.y;
-    int32_t handW = battleUIStage.handAreaButtons.areaRect.w;
-    int32_t handH = battleUIStage.handAreaButtons.areaRect.h;
-    int32_t maxCardsPerRow = handW / 150;
-    if(maxCardsPerRow < 1) maxCardsPerRow = 1;
-    int32_t lineHeight = 15;
-    int32_t currentRow = 0;
-    int32_t currentCol = 0;
-    for(int32_t i = 0; i < game.players[game.now_turn_player_id].hand.SIZE; i++) {
-        int32_t cardX = handX + 10 + currentCol * 150;
-        int32_t cardY = handY + 25 + currentRow * lineHeight;
-        if(cardX + 140 > handX + handW) {
-            currentRow++;
-            currentCol = 0;
-            cardX = handX + 10;
-            cardY = handY + 25 + currentRow * lineHeight;
-        }
-        if(mouseX >= cardX && mouseX <= cardX + 140 && mouseY >= cardY && mouseY <= cardY + 15) {
-            const Card* cardData = getCardData(game.players[game.now_turn_player_id].hand.array[i]);
-            if(cardData) {
-                draw_hover_preview(cardData->name, &game.players[game.now_turn_player_id].hand, mouseX, mouseY);
+    if(!battleUIStage.showCardDetailPopup){
+        // --- 新增：手牌懸停預覽（在所有UI繪製完畢後）---
+        int32_t handX = battleUIStage.handAreaButtons.areaRect.x;
+        int32_t handY = battleUIStage.handAreaButtons.areaRect.y;
+        int32_t handW = battleUIStage.handAreaButtons.areaRect.w;
+        int32_t handH = battleUIStage.handAreaButtons.areaRect.h;
+        int32_t maxCardsPerRow = handW / 150;
+        if(maxCardsPerRow < 1) maxCardsPerRow = 1;
+        int32_t lineHeight = 15;
+        int32_t currentRow = 0;
+        int32_t currentCol = 0;
+        for(int32_t i = 0; i < game.players[game.now_turn_player_id].hand.SIZE; i++) {
+            int32_t cardX = handX + 10 + currentCol * 150;
+            int32_t cardY = handY + 25 + currentRow * lineHeight;
+            if(cardX + 140 > handX + handW) {
+                currentRow++;
+                currentCol = 0;
+                cardX = handX + 10;
+                cardY = handY + 25 + currentRow * lineHeight;
             }
-            break;
+            if(mouseX >= cardX && mouseX <= cardX + 140 && mouseY >= cardY && mouseY <= cardY + 15) {
+                const Card* cardData = getCardData(game.players[game.now_turn_player_id].hand.array[i]);
+                if(cardData) {
+                    draw_hover_preview(cardData->name, &game.players[game.now_turn_player_id].hand, mouseX, mouseY);
+                }
+                break;
+            }
+            currentCol++;
         }
-        currentCol++;
-    }
 
-    // --- 新增：反轉牌懸停預覽 ---
-    int32_t metamorphX = battleUIStage.metamorphosisAreaButtons.areaRect.x;
-    int32_t metamorphY = battleUIStage.metamorphosisAreaButtons.areaRect.y;
-    int32_t metamorphW = battleUIStage.metamorphosisAreaButtons.areaRect.w;
-    int32_t metamorphH = battleUIStage.metamorphosisAreaButtons.areaRect.h;
-    maxCardsPerRow = metamorphW / 150;
-    if(maxCardsPerRow < 1) maxCardsPerRow = 1;
-    currentRow = 0;
-    currentCol = 0;
-    for(int32_t i = 0; i < game.players[game.now_turn_player_id].metamorphosis.SIZE; i++) {
-        int32_t cardX = metamorphX + 10 + currentCol * 150;
-        int32_t cardY = metamorphY + 25 + currentRow * lineHeight;
-        if(cardX + 140 > metamorphX + metamorphW) {
-            currentRow++;
-            currentCol = 0;
-            cardX = metamorphX + 10;
-            cardY = metamorphY + 25 + currentRow * lineHeight;
-        }
-        if(mouseX >= cardX && mouseX <= cardX + 140 && mouseY >= cardY && mouseY <= cardY + 15) {
-            const Card* cardData = getCardData(game.players[game.now_turn_player_id].metamorphosis.array[i]);
-            if(cardData) {
-                draw_hover_preview(cardData->name, &game.players[game.now_turn_player_id].metamorphosis, mouseX, mouseY);
+        // --- 新增：反轉牌懸停預覽 ---
+        int32_t metamorphX = battleUIStage.metamorphosisAreaButtons.areaRect.x;
+        int32_t metamorphY = battleUIStage.metamorphosisAreaButtons.areaRect.y;
+        int32_t metamorphW = battleUIStage.metamorphosisAreaButtons.areaRect.w;
+        int32_t metamorphH = battleUIStage.metamorphosisAreaButtons.areaRect.h;
+        maxCardsPerRow = metamorphW / 150;
+        if(maxCardsPerRow < 1) maxCardsPerRow = 1;
+        currentRow = 0;
+        currentCol = 0;
+        for(int32_t i = 0; i < game.players[game.now_turn_player_id].metamorphosis.SIZE; i++) {
+            int32_t cardX = metamorphX + 10 + currentCol * 150;
+            int32_t cardY = metamorphY + 25 + currentRow * lineHeight;
+            if(cardX + 140 > metamorphX + metamorphW) {
+                currentRow++;
+                currentCol = 0;
+                cardX = metamorphX + 10;
+                cardY = metamorphY + 25 + currentRow * lineHeight;
             }
-            break;
+            if(mouseX >= cardX && mouseX <= cardX + 140 && mouseY >= cardY && mouseY <= cardY + 15) {
+                const Card* cardData = getCardData(game.players[game.now_turn_player_id].metamorphosis.array[i]);
+                if(cardData) {
+                    draw_hover_preview(cardData->name, &game.players[game.now_turn_player_id].metamorphosis, mouseX, mouseY);
+                }
+                break;
+            }
+            currentCol++;
         }
-        currentCol++;
+    }
+    // 繪製卡片詳細信息彈窗
+    if (battleUIStage.showCardDetailPopup) {
+        const Card* cardData = getCardData(game.players[game.now_turn_player_id].hand.array[battleUIStage.selectedCardIndex]);
+        if (cardData) {
+            draw_card_detail_popup(cardData);
+        }
     }
     SDL_RenderPresent(uiBase.renderer);
 }
@@ -1673,7 +1684,7 @@ void draw_shop_popup() {
                 } else {
                     snprintf(countText, 30, "剩餘: %d張", game.basicBuyDeck[3][0].SIZE);
                 }
-                draw_text_center(countText, colX + colWidth/2, cardY + 40, gray2, 10);
+                draw_text_center(countText, colX + colWidth/2, cardY + 40, lightblue1, 10);
             }
         }
         
@@ -1762,8 +1773,17 @@ static void draw_card_detail_popup(const Card* cardData) {
     // 移动力
     char rangeText[20];
     if(cardData->range > 0) {
-        snprintf(rangeText, 20, "移動力: %d", cardData->range);
+        snprintf(rangeText, 20, "射程: %d", cardData->range);
         draw_text_center(rangeText, SCREEN_WIDTH/2, y, lightblue1, 18);
+    }
+
+    int32_t mouseX, mouseY;
+    SDL_GetMouseState(&mouseX, &mouseY);
+    if(mouse_in_button(battleUIStage.useHandButton)){
+        draw_button(battleUIStage.useHandButton, 1);
+    }
+    else{
+        draw_button(battleUIStage.useHandButton, 0);
     }
 }
 
