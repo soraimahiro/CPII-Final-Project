@@ -429,7 +429,7 @@ void print_hand_cards(sPlayer* player) {
 }
 
 void attack(sPlayer* defender, int total_damage) {
-    sPlayer* attacker = game.players[game.now_turn_player_id];
+    sPlayer* attacker = &game.players[game.now_turn_player_id];
     if (attacker->character == CHARACTER_SLEEPINGBEAUTY) {
         if (attacker->sleepingBeauty.atkRiseTime) {
             total_damage += attacker->sleepingBeauty.atkRise;
@@ -568,6 +568,9 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int specific_id) {
         printf("Energy Gained: %d\n", total_energy);
         printf("Defender's HP: %d/%d\n", defender->life, defender->maxlife);
         printf("Defender's Defense: %d/%d\n", defender->defense, defender->maxdefense);
+    }
+    if(attacker->character == CHARACTER_SNOWWHITE && attacker->snowWhite.meta1 && total_damage > 2){
+        put_posion(attacker, defender, &defender->graveyard);
     }
 }
 
@@ -831,7 +834,13 @@ void handle_ultimate(sPlayer* attacker, sPlayer* defender) {
             printf("invalid!\n");
             return;
         }
-    } 
+    }
+    else if(ultimate_card_id <= 31){
+        if(handle_snowwhite_ultimate(attacker, defender, ultimate_card)){
+            printf("invalid!\n");
+            return;
+        }
+    }
     pushbackVector(&attacker->usecards, ultimate_card_id);
     eraseVector(&attacker->hand, choice - 1);
 }

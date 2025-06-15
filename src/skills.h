@@ -14,6 +14,7 @@ int handle_redhood_skills(sPlayer* attacker, sPlayer* defender, const Card* skil
 int handle_redhood_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card);
 
 int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
+int handle_snowwhite_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card);
 
 int handle_sleepingbeauty_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
 int handle_sleepingbeauty_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card);

@@ -357,32 +357,47 @@ int ki(sPlayer* player) {
 
 int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level) {
     switch(skill_card->id){
-        case CARD_SNOWWHITE_ATK1_CRYSTAL_SHARD:
+        case CARD_SNOWWHITE_ATK1_CRYSTAL_SHARD:{
             if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
                 return -1;
             }
-            attack(defender, 1 + level);
+            int32_t total_damage = 1 + level;
+            attack(defender, total_damage);
+            if(attacker->snowWhite.meta1 && total_damage > 2){
+                put_posion(attacker, defender, &defender->graveyard);
+            }
             move_card(&defender->deck, &defender->graveyard);
             break;
-        case CARD_SNOWWHITE_ATK2_CRYSTAL_VORTEX:
+        }
+        case CARD_SNOWWHITE_ATK2_CRYSTAL_VORTEX:{
             if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
                 return -1;
             }
-            attack(defender, 2 + level);
+            int32_t total_damage = 2 + level;
+            attack(defender, total_damage);
+            if(attacker->snowWhite.meta1 && total_damage > 2){
+                put_posion(attacker, defender, &defender->graveyard);
+            }
             for(int32_t i = 0; i < 2; i++){
                 move_card(&defender->deck, &defender->graveyard);
             }
             break;
-        case CARD_SNOWWHITE_ATK3_CRYSTAL_STORM:
+        }
+        case CARD_SNOWWHITE_ATK3_CRYSTAL_STORM:{
             if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
                 return -1;
             }
-            attack(defender, 3 + level);
+            int32_t total_damage = 3 + level;
+            attack(defender, total_damage);
+            if(attacker->snowWhite.meta1 && total_damage > 2){
+                put_posion(attacker, defender, &defender->graveyard);
+            }
             for(int32_t i = 0; i < 3; i++){
                 move_card(&defender->deck, &defender->graveyard);
             }
             break;
-        case CARD_SNOWWHITE_DEF1_TAINTED_GRACE:
+        }
+        case CARD_SNOWWHITE_DEF1_TAINTED_GRACE:{
             if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
                 return -1;
             }
@@ -411,7 +426,8 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                 }
             }
             break;
-        case CARD_SNOWWHITE_DEF2_TAINTED_FEAST:
+        }
+        case CARD_SNOWWHITE_DEF2_TAINTED_FEAST:{
             if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
                 return -1;
             }
@@ -440,7 +456,8 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                 }
             }
             break;
-        case CARD_SNOWWHITE_DEF3_TAINTED_CARNIVAL:
+        }
+        case CARD_SNOWWHITE_DEF3_TAINTED_CARNIVAL:{
             if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
                 return -1;
             }
@@ -469,7 +486,8 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                 }
             }
             break;
-        case CARD_SNOWWHITE_MOVE1_BROKEN_FANTASY:
+        }
+        case CARD_SNOWWHITE_MOVE1_BROKEN_FANTASY:{
             if(abs(attacker->locate[0] - defender->locate[0]) >= level){
                 return -1;
             }
@@ -498,7 +516,8 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
             }
             move(attacker, dest - attacker->locate[0]);
             break;
-        case CARD_SNOWWHITE_MOVE2_BROKEN_REALITY:
+        }
+        case CARD_SNOWWHITE_MOVE2_BROKEN_REALITY:{
             if(abs(attacker->locate[0] - defender->locate[0]) >= 1 + level){
                 return -1;
             }
@@ -527,7 +546,8 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
             }
             move(attacker, dest - attacker->locate[0]);
             break;
-        case CARD_SNOWWHITE_MOVE3_BROKEN_FATE:
+        }
+        case CARD_SNOWWHITE_MOVE3_BROKEN_FATE:{
             if(abs(attacker->locate[0] - defender->locate[0]) >= 2 + level){
                 return -1;
             }
@@ -556,6 +576,15 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
             }
             move(attacker, dest - attacker->locate[0]);
             break;
+        }
+        default:
+            break;
+    }
+    return 0;
+}
+
+int handle_snowwhite_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card){
+    switch(ultimate_card->id) {
         case CARD_SNOWWHITE_SPECIAL1_SEVEN_SNAKES_RAGE:
             if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
                 return -1;
@@ -602,7 +631,6 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
         default:
             break;
     }
-    return 0;
 }
 
 int handle_kaguya_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level) {
