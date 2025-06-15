@@ -123,6 +123,7 @@ void draw_card_area_stage(const char* title, vector* cards, int32_t x, int32_t y
 // New popup window functions
 void draw_shop_popup();
 void draw_deck_popup(const char* title, vector* deck, vector* graveyard);
+void draw_skill_shop_popup(const char* title, int32_t skillType);
 void draw_hover_preview(const char* title, vector* cards, int32_t mouseX, int32_t mouseY);
 void handle_popup_events(SDL_Event* event);
 

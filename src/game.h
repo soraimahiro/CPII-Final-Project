@@ -44,5 +44,8 @@ void print_player_state(sPlayer* player); // Debug function to print player stat
 // 基礎牌商店相關函式
 void buyBasicCard(int32_t type, int32_t level);
 
+// 將卡片加入牌堆
+void pushbackVector(vector* v, int32_t value);
+
 #endif
 
