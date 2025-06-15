@@ -20,20 +20,12 @@
 
 #include "architecture.h"
 #include "card_id.h"
-#include "ui_stage.h"
+#include "ui/ui_stage.h"
 
 int beginning_phase();
 int refresh_phase();
-int activation_phase();
 int ending_phase();
 
 // action
 int focus();
-int attack_action();
-int defense_action();
-int move_action();
-int use_a_skill();
-int use_an_epic_card();
-int power_up_action();
-int component_action();
 #endif
