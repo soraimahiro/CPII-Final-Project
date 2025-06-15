@@ -41,6 +41,7 @@ void draw_card(sPlayer* player, int count);
 int activation_phase(int32_t handIndex);
 int next_phase();
 void bot_act();
+void handle_move(sPlayer* player, int handIndex);
 
 // 基礎牌商店相關函式
 void buyBasicCard(int32_t type, int32_t level);

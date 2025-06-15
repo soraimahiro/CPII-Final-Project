@@ -86,6 +86,11 @@ typedef struct {
     int32_t selectedCardIndex;  // 當前選中的卡片索引
     sButton *useHandButton;
     
+    // 移動牌使用狀態
+    bool showMoveDirectionPopup;  // 是否顯示移動方向選擇彈窗
+    int32_t selectedMoveCardIndex;  // 當前選中的移動牌索引
+    sButton *moveDirectionButtons[4];  // 上下左右四個方向按鈕
+    
     // Hover states
     bool hoveringShop;
     bool hoveringOpponentDeck;    // 恢復懸停狀態
@@ -130,5 +135,13 @@ void draw_deck_popup(const char* title, vector* deck, vector* graveyard);
 void draw_skill_shop_popup(const char* title, int32_t skillType);
 void draw_hover_preview(const char* title, vector* cards, int32_t mouseX, int32_t mouseY);
 void handle_popup_events(SDL_Event* event);
+
+// 新增移动相关函数
+void ui_handle_move(sPlayer* player, int handIndex, int32_t direction);
+void ui_move_player(sPlayer* player, int total_move, int32_t direction);
+
+// 新增辅助函数
+bool ui_is_basic_card(int32_t card_id, int type);
+void ui_put_posion(sPlayer* attacker, sPlayer* defender, vector* target);
 
 #endif

@@ -614,7 +614,7 @@ void handle_move(sPlayer* player, int handIndex) {
     
     if (!is_basic_card(card_id, TYPE_MOVE) && card_id != 10) {
         printf("Not a move card!\n");
-        //continue;
+        return;
     }
     
     // Calculate move distance and energy
@@ -625,7 +625,6 @@ void handle_move(sPlayer* player, int handIndex) {
     // Move card to usecards
     pushbackVector(&player->usecards, card_id);
     eraseVector(&player->hand, handIndex);
-
 
     if (countCard(&player->metamorphosis, CARD_MULAN_METAMORPH3_CHARGE) && player->mulan.KI_TOKEN) {
         int ki_cost;
@@ -639,9 +638,11 @@ void handle_move(sPlayer* player, int handIndex) {
         move(player, total_move, false);
     }
 }
+
 void set_skills(int handIndex) {
     game.set_skill_hand = handIndex;
 }
+
 void handle_skills(sPlayer* attacker, sPlayer* defender, int basicIndex) {
     DEBUG_PRINT("\033[31mhandle skill\033[0m\n");
     int skillIndex = game.set_skill_hand;
@@ -1054,7 +1055,7 @@ int activation_phase(int32_t handIndex){
     DEBUG_PRINT_VEC(&current_player->graveyard, "graveyard");
     DEBUG_PRINT("%d\n", game.set_skill_hand);
     
-    return 0; // 加入返回值
+    return 0;
 }
  
 
