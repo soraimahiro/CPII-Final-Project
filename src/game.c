@@ -286,6 +286,10 @@ void game_init() {
     }
     
     DEBUG_PRINT("=== END GAME INITIALIZATION DEBUG ===\n\n");
+    if (game.players[game.now_turn_player_id].isBOT) {
+        bot_act();
+        next_phase();
+    }
 }
 
 void init_character(sPlayer* p){
@@ -506,6 +510,7 @@ void move(sPlayer* player, int total_move) {
 
 // Attack action
 void handle_attack(sPlayer* attacker, sPlayer* defender, int handIndex) {
+    DEBUG_PRINT("\033[31mhandle attack\033[0m\n");
     if (abs(attacker->locate[0] - defender->locate[0]) > 1) {
         printf("range is not enough\n");
         return;
@@ -548,7 +553,7 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int handIndex) {
 
 // Defense action
 void handle_defense(sPlayer* player, int handIndex) {
-    DEBUG_PRINT("handle defense\n");
+    DEBUG_PRINT("\033[31mhandle defense\033[0m\n");
     int total_defense = 0;
     int total_energy = 0;
     bool continue_defense = true;
@@ -572,6 +577,7 @@ void handle_defense(sPlayer* player, int handIndex) {
 
 // Move action
 void handle_move(sPlayer* player, int handIndex) {
+    DEBUG_PRINT("\033[31mhandle move\033[0m\n");
     int total_move = 0;
     bool continue_move = true;
         
@@ -610,7 +616,7 @@ void set_skills(int handIndex) {
     game.set_skill_hand = handIndex;
 }
 void handle_skills(sPlayer* attacker, sPlayer* defender, int basicIndex) {
-    printf("handle skill\n");
+    DEBUG_PRINT("\033[31mhandle skill\033[0m\n");
     int skillIndex = game.set_skill_hand;
 
     int total_damage = 0;
@@ -977,6 +983,7 @@ int activation_phase(int32_t handIndex){
     sPlayer* opponent = &game.players[(game.now_turn_player_id + 1) % 2];
     int32_t cardID = current_player->hand.array[handIndex];
     const Card* card = getCardData(cardID);
+    DEBUG_PRINT("my locate: %d, oppoent locate: %d\n", current_player->locate[0], opponent->locate[0]);
 
     if (game.focused) {
         eraseVector(&current_player->hand, handIndex);
