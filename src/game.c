@@ -548,13 +548,6 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int specific_id) {
         int card_value = card->damage;
         total_damage += card_value;
         total_energy += card_value;
-
-        if (attacker->character == CHARACTER_MULAN) {
-            int cost_ki = 0;
-            scanf("%d", cost_ki);
-            attacker->mulan.KI_TOKEN -= cost_ki;
-            total_damage += cost_ki;
-        }
         
         // Move card to usecards
         pushbackVector(&attacker->usecards, card_id);
@@ -681,13 +674,6 @@ void handle_move(sPlayer* player, int specific_id) {
         
         printf("Added %d move distance and energy\n", card_value);
     }
-
-    if (countCard(&player->metamorphosis, CARD_MULAN_METAMORPH3_CHARGE) && player->mulan.KI_TOKEN) {
-        int ki_cost;
-        scanf("%d", &ki_cost);
-        player->mulan.KI_TOKEN -= ki_cost;
-        total_move += ki_cost;
-    }
     
     if (total_move > 0) {
         // Apply movement
@@ -808,6 +794,7 @@ void handle_skills(sPlayer* attacker, sPlayer* defender) {
     eraseVector(&attacker->hand, choice - 1);
     pushbackVector(&attacker->usecards, basic_card_id);
     eraseVector(&attacker->hand, choice - 1);
+
 }
 
 void handle_ultimate(sPlayer* attacker, sPlayer* defender) {
