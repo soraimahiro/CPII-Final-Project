@@ -1137,12 +1137,8 @@ void handle_battle_events_stage(SDL_Event* event) {
                 // 如果是移動牌，顯示方向選擇彈窗
                 battleUIStage.showMoveDirectionPopup = true;
                 battleUIStage.selectedMoveCardIndex = battleUIStage.selectedCardIndex;
-            } else {
-                // 如果不是移動牌，直接使用
-                printf("使用卡牌: %s\n", cardData->name);
-                battleUIStage.showCardDetailPopup = false;
+                return;
             }
-            return;
         }
     }
     
