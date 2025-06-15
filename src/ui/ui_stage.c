@@ -1380,12 +1380,17 @@ void handle_battle_events_stage(SDL_Event* event) {
             return;
         }
         
-        // Handle action button clicks (only 2 buttons now)
-        for(int32_t i = 0; i < 2; i++) {
-            if(battleUIStage.actionButtons[i] && mouse_in_button(battleUIStage.actionButtons[i])) {
-                printf("Action button %d clicked\n", i + 1);
-                return;
-            }
+        if(battleUIStage.actionButtons[1] && mouse_in_button(battleUIStage.actionButtons[1])) {
+            printf("next step\n");
+            next_phase();
+            cleanup_battle_ui_stage();
+            init_battle_ui_stage();
+            return;
+        }
+
+        if(battleUIStage.actionButtons[0] && mouse_in_button(battleUIStage.actionButtons[0])) {
+            printf("focus\n");
+            return;
         }
         
         // Handle other button clicks

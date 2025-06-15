@@ -549,6 +549,7 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int handIndex) {
 
 // Defense action
 void handle_defense(sPlayer* player, int handIndex) {
+    DEBUG_PRINT("handle defense\n");
     int total_defense = 0;
     int total_energy = 0;
     bool continue_defense = true;
@@ -761,7 +762,7 @@ void draw_card(sPlayer* player, int count) {
     for (int i = 0; i < count; i++) {
         int32_t card;
         // 先嘗試從牌堆抽牌
-        if (getVectorTop(&player->deck, &card) == 0) {
+        if (getVectorTop(&player->deck, &card)) {
             pushbackVector(&player->hand, card);
             popbackVector(&player->deck);
         } else {
@@ -776,7 +777,7 @@ void draw_card(sPlayer* player, int count) {
                     popbackVector(&player->graveyard);
                 }
                 // 再試一次抽牌
-                if (getVectorTop(&player->deck, &card) == 0) {
+                if (getVectorTop(&player->deck, &card)) {
                     pushbackVector(&player->hand, card);
                     popbackVector(&player->deck);
                 } else {

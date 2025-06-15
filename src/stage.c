@@ -124,6 +124,7 @@ int ending_phase(){
     
     printf("Draw 6 cards\n");
     draw_card(current_player, 6);
+    DEBUG_PRINT_VEC(&current_player->hand, "hand");
     if (countCard(&current_player->usecards, CARD_MULAN_SPECIAL1_SOARING)) draw_card(current_player, 4);
 
     if (current_player->mulan.extraDraw && current_player->mulan.KI_TOKEN) {

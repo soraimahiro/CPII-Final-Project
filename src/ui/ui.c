@@ -1,5 +1,4 @@
 #include "ui.h"
-#include "ui_stage.h"
 
 extern sGame game;
 extern sUiBase uiBase;

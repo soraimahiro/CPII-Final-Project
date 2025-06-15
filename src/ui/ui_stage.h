@@ -5,7 +5,9 @@
 #include <stdint.h>
 
 #include "../architecture.h"
-#include "ui.h"
+#include "../card.h"
+#include "../game.h"
+#include "ui_component.h"
 
 // 卡牌區域按鈕管理結構
 typedef struct {

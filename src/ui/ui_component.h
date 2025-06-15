@@ -7,6 +7,13 @@
 #include <SDL2/SDL_ttf.h>
 #include "../architecture.h"
 
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 720
+
+#define FONT_PATH "assets/fonts/jf-openhuninn-2.0.ttf"
+
+#define SELECTABLE_CHARACTER_COUNT 6
+
 typedef struct _sUiBase {
     SDL_Window *window;
     SDL_Renderer *renderer;

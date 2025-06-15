@@ -12,13 +12,7 @@
 #include "../card.h"
 #include "../game.h"
 #include "ui_component.h"
-
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 720
-
-#define FONT_PATH "assets/fonts/jf-openhuninn-2.0.ttf"
-
-#define SELECTABLE_CHARACTER_COUNT 6
+#include "ui_stage.h"
 
 // Confirmation dialog state
 extern bool showConfirmDialog;
