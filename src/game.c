@@ -510,11 +510,12 @@ void defend(sPlayer* player, int total_defense) {
     if (player->defense > player->maxdefense) player->defense = player->maxdefense;
 }
 
-void move(sPlayer* player, int total_move) {
+void move(sPlayer* player, int total_move, bool snow) {
     sPlayer *oppoent = &game.players[(game.now_turn_player_id+1)%2];
-    printf("\nChoose direction (-1: left, 1: right): ");
+    if (!snow) printf("\nChoose direction (-1: left, 1: right): ");
     int32_t direction;
-    scanf("%d", &direction);
+    if (!snow) scanf("%d", &direction);
+    else direction = 1;
     int32_t dest = 0, src = player->locate[0];
     if (player->locate[0] + total_move*direction == oppoent->locate[0]) {
         dest = src + (total_move-1)*direction;
@@ -635,7 +636,7 @@ void handle_move(sPlayer* player, int handIndex) {
     
     if (total_move > 0) {
         // Apply movement
-        move(player, total_move);
+        move(player, total_move, false);
     }
 }
 void set_skills(int handIndex) {

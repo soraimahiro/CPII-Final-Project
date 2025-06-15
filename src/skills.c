@@ -225,7 +225,7 @@ int handle_redhood_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ul
                         defend(attacker, card->level);
                         break;
                     case TYPE_MOVE:
-                        move(attacker, card->level);
+                        move(attacker, card->level, false);
                         break;
                     default:
                         printf("選擇要執行的效果：\n");
@@ -242,7 +242,7 @@ int handle_redhood_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ul
                                 defend(attacker, 1);
                                 break;
                             case 3:
-                                move(attacker, 1);
+                                move(attacker, 1, false);
                                 break;
                         }
                         break;
@@ -667,7 +667,7 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                     }
                 }
             }
-            move(attacker, dest - attacker->locate[0]);
+            move(attacker, dest - attacker->locate[0], true);
             break;
         }
         case CARD_SNOWWHITE_MOVE2_BROKEN_REALITY:{
@@ -697,7 +697,7 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                     }
                 }
             }
-            move(attacker, dest - attacker->locate[0]);
+            move(attacker, dest - attacker->locate[0], true);
             break;
         }
         case CARD_SNOWWHITE_MOVE3_BROKEN_FATE:{
@@ -727,7 +727,7 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                     }
                 }
             }
-            move(attacker, dest - attacker->locate[0]);
+            move(attacker, dest - attacker->locate[0], true);
             break;
         }
         default:
