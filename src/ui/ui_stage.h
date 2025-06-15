@@ -51,6 +51,7 @@ typedef struct {
     sCardAreaButtons metamorphosisAreaButtons;      // 反轉牌區域按鈕
     sCardAreaButtons opponentHandAreaButtons;  // 對手手牌區域按鈕
     sCardAreaButtons skillAreaButtons;     // 技能區域按鈕
+    sCardAreaButtons graveyardButtons;     // 棄牌區按鈕
     
     // UI state
     int32_t selectedCard;

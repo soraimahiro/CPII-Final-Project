@@ -169,7 +169,7 @@ void game_init() {
     
     // 3. 設置初始抽牌
     initial_draw();
-    
+
     // 4. 設置遊戲狀態
     game.now_turn_player_id = 0;  // 玩家1先攻
     game.status = CHOOSE_MOVE;    // 從選擇移動開始

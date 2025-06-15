@@ -745,10 +745,10 @@ void draw_battle_grid_stage() {
         
         if(hasPlayer) {
             // Draw player in cell
-            if(playerInCell == game.now_turn_player_id) {
-                SDL_SetRenderDrawColor(uiBase.renderer, 0, 150, 0, 255); // Green for current player
+            if(playerInCell == 0) {
+                SDL_SetRenderDrawColor(uiBase.renderer, 0, 150, 0, 255); // Green for player 1
             } else {
-                SDL_SetRenderDrawColor(uiBase.renderer, 150, 0, 0, 255); // Red for opponent
+                SDL_SetRenderDrawColor(uiBase.renderer, 150, 0, 0, 255); // Red for player 2
             }
             SDL_RenderFillRect(uiBase.renderer, &cell);
         } else {
@@ -776,10 +776,10 @@ void draw_player_info_stage(int32_t player_id, int32_t x, int32_t y, bool is_cur
     
     // Background
     SDL_Rect bgRect = {x, y, LEFT_COLUMN_WIDTH - 20, 90};
-    if(is_current) {
-        SDL_SetRenderDrawColor(uiBase.renderer, 0, 80, 0, 255); // Green for current player
+    if(player_id == 0) {
+        SDL_SetRenderDrawColor(uiBase.renderer, 0, 80, 0, 255); // Green for player 1
     } else {
-        SDL_SetRenderDrawColor(uiBase.renderer, 80, 0, 0, 255); // Red for opponent
+        SDL_SetRenderDrawColor(uiBase.renderer, 80, 0, 0, 255); // Red for player 2
     }
     SDL_RenderFillRect(uiBase.renderer, &bgRect);
     SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
@@ -1173,10 +1173,12 @@ void handle_battle_events_stage(SDL_Event* event) {
         
         // 處理棄牌堆點擊
         if (battleUIStage.opponentGraveButton && mouse_in_button(battleUIStage.opponentGraveButton)) {
+            DEBUG_PRINT("Opponent graveyard button clicked\n");
             battleUIStage.showOpponentGravePopup = true;
             return;
         }
         if (battleUIStage.myGraveButton && mouse_in_button(battleUIStage.myGraveButton)) {
+            DEBUG_PRINT("My graveyard button clicked\n");
             battleUIStage.showMyGravePopup = true;
             return;
         }
@@ -1320,6 +1322,10 @@ void handle_battle_events_stage(SDL_Event* event) {
         
         // 處理反轉牌區域按鈕事件
         if (handle_card_area_button_events(&battleUIStage.metamorphosisAreaButtons, event)) {
+            return;  // 事件已被處理，不繼續處理其他事件
+        }
+
+        if (handle_card_area_button_events(&battleUIStage.graveyardButtons, event)) {
             return;  // 事件已被處理，不繼續處理其他事件
         }
         
@@ -1517,6 +1523,71 @@ void handle_battle_events_stage(SDL_Event* event) {
             }
         }
     }
+    
+    // 處理棄牌區按鈕點擊
+    if (event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
+        // 檢查是否點擊了對手棄牌區按鈕
+        if (mouse_in_button(battleUIStage.opponentGraveButton)) {
+            DEBUG_PRINT("Opponent graveyard button clicked");
+            battleUIStage.showOpponentGravePopup = true;
+            return;
+        }
+        
+        // 檢查是否點擊了自己的棄牌區按鈕
+        if (mouse_in_button(battleUIStage.myGraveButton)) {
+            DEBUG_PRINT("My graveyard button clicked");
+            battleUIStage.showMyGravePopup = true;
+            return;
+        }
+        
+        // 檢查是否點擊了棄牌區彈窗中的整理按鈕
+        if (battleUIStage.showOpponentGravePopup || battleUIStage.showMyGravePopup) {
+            int32_t mouseX, mouseY;
+            SDL_GetMouseState(&mouseX, &mouseY);
+            SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 350, SCREEN_HEIGHT/2 - 250, 700, 500};
+            SDL_Rect sortButtonRect = {
+                dialogRect.x + dialogRect.w - 80,
+                dialogRect.y + 70,
+                70,
+                25
+            };
+            
+            if (mouseX >= sortButtonRect.x && mouseX < sortButtonRect.x + sortButtonRect.w &&
+                mouseY >= sortButtonRect.y && mouseY < sortButtonRect.y + sortButtonRect.h) {
+                DEBUG_PRINT("Sort button clicked in graveyard popup");
+                return;
+            }
+            
+            // 檢查是否點擊了棄牌區彈窗中的卡牌按鈕
+            vector* graveyard = battleUIStage.showOpponentGravePopup ? 
+                              &game.players[1].graveyard : &game.players[0].graveyard;
+            
+            int32_t listY = dialogRect.y + 70;
+            int32_t lineHeight = 15;
+            int32_t maxCardsPerRow = dialogRect.w / 150;
+            if(maxCardsPerRow < 1) maxCardsPerRow = 1;
+            
+            for(int32_t i = 0; i < graveyard->SIZE; i++) {
+                int32_t row = i / maxCardsPerRow;
+                int32_t col = i % maxCardsPerRow;
+                int32_t buttonX = dialogRect.x + 30 + col * 150;
+                int32_t buttonY = listY + 30 + row * lineHeight;
+                
+                SDL_Rect cardButtonRect = {
+                    buttonX,
+                    buttonY,
+                    140,
+                    15
+                };
+                
+                if (mouseX >= cardButtonRect.x && mouseX < cardButtonRect.x + cardButtonRect.w &&
+                    mouseY >= cardButtonRect.y && mouseY < cardButtonRect.y + cardButtonRect.h) {
+                    DEBUG_PRINT("Card area button clicked in graveyard: button %d", i);
+                    return;
+                }
+            }
+        }
+    }
 }
 
 void activation_menu(int8_t *active) {
@@ -1637,26 +1708,167 @@ void draw_deck_popup(const char* title, vector* deck, vector* graveyard) {
         // 移除卡牌數量顯示
         draw_text("內容:", dialogRect.x + 20, listY, lightblue1, 18);
         
-        // Scrollable card list
-        int32_t maxVisible = 15; // Maximum visible cards
-        int32_t cardY = listY + 30;
+        // 创建卡牌按钮
+        SDL_Color textColors[] = {white, white, black, black};
+        SDL_Color bgColors[] = {gray1, gray2, lightblue1, lightblue2};
+        SDL_Color borderColors[] = {white, white, white, white};
         
-        for (int32_t i = 0; i < maxVisible && i < deck->SIZE; i++) {
+        // 创建整理按钮
+        SDL_Rect sortButtonRect = {
+            dialogRect.x + dialogRect.w - 80,  // 距离右边80像素
+            listY,                            // 距离上边5像素
+            70,                               // 宽度
+            25                                // 高度
+        };
+        sButton* sortButton = create_button(sortButtonRect, "整理", textColors, bgColors, borderColors, 14, 2);
+        
+        // 绘制整理按钮
+        int8_t buttonType = mouse_in_button(sortButton) ? 1 : 0;
+        draw_button(sortButton, buttonType);
+        
+        // 为每张卡牌创建按钮
+        int32_t maxCardsPerRow = dialogRect.w / 150; // 每行最多显示的卡牌数
+        if(maxCardsPerRow < 1) maxCardsPerRow = 1;
+        
+        int32_t lineHeight = 15;
+        int32_t currentRow = 0;
+        int32_t currentCol = 0;
+        
+        // 获取鼠标位置用于悬停检测
+        int32_t mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        
+        // 用于存储当前悬停的卡牌索引
+        int32_t hoveredCardIndex = -1;
+        
+        for(int32_t i = 0; i < deck->SIZE; i++) {
             const Card* cardData = getCardData(deck->array[i]);
-            if (cardData) {
-                char cardText[100];
-                snprintf(cardText, 100, "%d. %s", i + 1, cardData->name);
-                draw_text(cardText, dialogRect.x + 30, cardY + i * 20, white, 14);
+            if(cardData) {
+                // 计算按钮位置
+                int32_t buttonX = dialogRect.x + 30 + currentCol * 150;
+                int32_t buttonY = listY + 30 + currentRow * lineHeight;
                 
-                // Show card description on the right
-                draw_text(cardData->description, dialogRect.x + 300, cardY + i * 20, gray2, 12);
+                // 检查是否需要换行
+                if(buttonX + 140 > dialogRect.x + dialogRect.w - 20) {
+                    currentRow++;
+                    currentCol = 0;
+                    buttonX = dialogRect.x + 30;
+                    buttonY = listY + 30 + currentRow * lineHeight;
+                }
+                
+                // 创建按钮
+                SDL_Rect cardButtonRect = {
+                    buttonX,
+                    buttonY,
+                    140,  // 宽度
+                    15    // 高度
+                };
+                
+                // 检查鼠标是否悬停在按钮上
+                bool isHovered = (mouseX >= cardButtonRect.x && mouseX < cardButtonRect.x + cardButtonRect.w &&
+                                mouseY >= cardButtonRect.y && mouseY < cardButtonRect.y + cardButtonRect.h);
+                
+                // 如果悬停，更新悬停卡牌索引
+                if (isHovered) {
+                    hoveredCardIndex = i;
+                }
+                
+                // 创建按钮，根据是否悬停使用不同的颜色
+                SDL_Color hoverTextColors[] = {white, white, black, black};
+                SDL_Color hoverBgColors[] = {gray2, gray1, gray1, gray2};  // 改为灰色系
+                sButton* cardButton = create_button(cardButtonRect, cardData->name, 
+                    isHovered ? hoverTextColors : textColors,
+                    isHovered ? hoverBgColors : bgColors,
+                    borderColors, 12, 1);
+                
+                // 绘制按钮
+                buttonType = mouse_in_button(cardButton) ? 1 : 0;
+                draw_button(cardButton, buttonType);
+                
+                // 显示卡牌描述
+                draw_text(cardData->description, buttonX + 150, buttonY, gray2, 12);
+                
+                // 释放按钮内存
+                free_button(cardButton);
+                
+                currentCol++;
             }
         }
         
-        if (deck->SIZE > maxVisible) {
+        // 如果鼠标悬停在卡牌上，显示详细信息的悬浮窗口
+        if (hoveredCardIndex != -1) {
+            const Card* hoveredCard = getCardData(deck->array[hoveredCardIndex]);
+            if (hoveredCard) {
+                // 创建悬浮窗口背景
+                SDL_Rect hoverRect = {
+                    mouseX + 20,  // 在鼠标右侧显示
+                    mouseY - 100, // 在鼠标上方显示
+                    300,         // 宽度
+                    200          // 高度
+                };
+                
+                // 确保悬浮窗口不会超出屏幕
+                if (hoverRect.x + hoverRect.w > SCREEN_WIDTH) {
+                    hoverRect.x = mouseX - hoverRect.w - 20;
+                }
+                if (hoverRect.y < 0) {
+                    hoverRect.y = 0;
+                }
+                
+                // 绘制半透明背景
+                SDL_SetRenderDrawColor(uiBase.renderer, 40, 40, 40, 230);
+                SDL_RenderFillRect(uiBase.renderer, &hoverRect);
+                SDL_SetRenderDrawColor(uiBase.renderer, 100, 100, 100, 255);
+                SDL_RenderDrawRect(uiBase.renderer, &hoverRect);
+                
+                // 显示卡牌详细信息
+                int32_t y = hoverRect.y + 10;
+                draw_text_center(hoveredCard->name, hoverRect.x + hoverRect.w/2, y, white, 18);
+                y += 30;
+                
+                // 显示卡牌类型
+                const char* typeName = getCardTypeName(hoveredCard->type);
+                char typeText[50];
+                snprintf(typeText, 50, "類型: %s", typeName);
+                draw_text(typeText, hoverRect.x + 10, y, lightblue1, 14);
+                y += 25;
+                
+                // 显示使用费用
+                char costText[20];
+                snprintf(costText, 20, "使用費用: %d", hoveredCard->cost);
+                draw_text(costText, hoverRect.x + 10, y, lightblue1, 14);
+                y += 25;
+                
+                // 显示效果描述
+                draw_text("效果:", hoverRect.x + 10, y, lightblue1, 14);
+                y += 25;
+                draw_text(hoveredCard->description, hoverRect.x + 10, y, white, 12);
+                y += 40;
+                
+                // 显示攻击力（如果有）
+                if (hoveredCard->damage > 0) {
+                    char damageText[20];
+                    snprintf(damageText, 20, "攻擊力: %d", hoveredCard->damage);
+                    draw_text(damageText, hoverRect.x + 10, y, lightblue1, 14);
+                    y += 25;
+                }
+                
+                // 显示防御力（如果有）
+                if (hoveredCard->defense > 0) {
+                    char defenseText[20];
+                    snprintf(defenseText, 20, "防禦力: %d", hoveredCard->defense);
+                    draw_text(defenseText, hoverRect.x + 10, y, lightblue1, 14);
+                }
+            }
+        }
+        
+        // 释放整理按钮内存
+        free_button(sortButton);
+        
+        if (deck->SIZE > maxCardsPerRow * 5) { // 如果超过5行
             char moreText[30];
             snprintf(moreText, 30, "... 還有更多");
-            draw_text(moreText, dialogRect.x + 30, cardY + maxVisible * 20, gray2, 14);
+            draw_text(moreText, dialogRect.x + 30, listY + 30 + (currentRow + 1) * lineHeight, gray2, 14);
         }
     } else {
         draw_text_center("空的", SCREEN_WIDTH/2, listY + 100, gray2, 24);
