@@ -1390,6 +1390,7 @@ void handle_battle_events_stage(SDL_Event* event) {
 
         if(battleUIStage.actionButtons[0] && mouse_in_button(battleUIStage.actionButtons[0])) {
             printf("focus\n");
+            game.focused = true;
             return;
         }
         
