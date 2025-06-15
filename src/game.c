@@ -30,47 +30,16 @@ void setup_initial_deck(sPlayer* player) {
 // 設置技能牌堆
 void setup_skill_decks(sPlayer* player) {
     int base_id = player->character * 12 + 11;  // 角色基本牌起始ID
-    int meta_base_id = player->character * 4 + 135;  // 蛻變牌起始ID
     
-    // 攻擊技能牌堆
-    for (int i = 0; i < 2; i++) {
-        pushbackVector(&player->attackSkill, base_id + 1);  // 2張攻擊lv2
-    }
-    pushbackVector(&player->attackSkill, meta_base_id);  // 蛻變牌1
-    for (int i = 0; i < 3; i++) {
-        pushbackVector(&player->attackSkill, base_id + 2);  // 3張攻擊lv3
-    }
-    pushbackVector(&player->attackSkill, meta_base_id + 3);  // 蛻變牌4
-    
-    // 防禦技能牌堆
-    for (int i = 0; i < 2; i++) {
-        pushbackVector(&player->defenseSkill, base_id + 4);  // 2張防禦lv2
-    }
-    pushbackVector(&player->defenseSkill, meta_base_id + 1);  // 蛻變牌2
-    for (int i = 0; i < 3; i++) {
-        pushbackVector(&player->defenseSkill, base_id + 5);  // 3張防禦lv3
-    }
-    // 特殊處理火柴女孩
-    if (player->character == CHARACTER_MATCHGIRL) {
-        pushbackVector(&player->defenseSkill, meta_base_id + 4);  // 蛻變牌5
-    } else {
-        pushbackVector(&player->defenseSkill, meta_base_id + 3);  // 蛻變牌4
-    }
-    
-    // 移動技能牌堆
-    for (int i = 0; i < 2; i++) {
-        pushbackVector(&player->moveSkill, base_id + 7);  // 2張移動lv2
-    }
-    pushbackVector(&player->moveSkill, meta_base_id + 2);  // 蛻變牌3
-    for (int i = 0; i < 3; i++) {
-        pushbackVector(&player->moveSkill, base_id + 8);  // 3張移動lv3
-    }
-    // 特殊處理火柴女孩
-    if (player->character == CHARACTER_MATCHGIRL) {
-        pushbackVector(&player->moveSkill, meta_base_id + 5);  // 蛻變牌6
-    } else {
-        pushbackVector(&player->moveSkill, meta_base_id + 3);  // 蛻變牌4
-    }
+    pushbackVector(&player->attackSkill, base_id);
+    pushbackVector(&player->attackSkill, base_id + 1);
+    pushbackVector(&player->attackSkill, base_id + 2);
+    pushbackVector(&player->defenseSkill, base_id + 3);
+    pushbackVector(&player->defenseSkill, base_id + 4);
+    pushbackVector(&player->defenseSkill, base_id + 5);
+    pushbackVector(&player->moveSkill, base_id + 6);
+    pushbackVector(&player->moveSkill, base_id + 7);
+    pushbackVector(&player->moveSkill, base_id + 8);
 }
 
 // 設置必殺牌
@@ -160,6 +129,7 @@ void game_init() {
         player->defense = 0;
         player->energy = 0;
         player->specialGate = charInfo.ultimate_threshold;
+        printf("%d\n", player->character);
         
         // 設置起始位置
         player->locate[0] = (i == 0) ? 4 : 6;  // 玩家1在4，玩家2在6
@@ -1138,9 +1108,16 @@ int activation_phase(int32_t cardID){
     else if(cardID >= CARD_BASIC_MOVE1 && cardID <= CARD_BASIC_MOVE3){
         handle_move(current_player, cardID);
     }
-    else if(cardID == CARD_BASIC_COMMON){
+    /*else if(cardID == CARD_BASIC_COMMON){
 
-    }
+    }*/
+    /*else if(cardID >= 131 && cardID <= 133){
+        current_player->energy += 1;
+        if (current_player->energy > 25) current_player->energy = 25;
+        pushbackVector(&current_player->graveyard, cardID);
+        eraseVector(&current_player->hand, choice - 1);
+        return;
+    }*/
     
     return 0; // 加入返回值
 }
@@ -1149,4 +1126,6 @@ int next_phase(){
     ending_phase();
     beginning_phase();
     refresh_phase();
+    
+    return 0;
 }

@@ -715,7 +715,7 @@ int handle_snowwhite_ultimate(sPlayer* attacker, sPlayer* defender, const Card* 
                 }
             }
             defender->life -= damage;
-            break;
+            return 0;
         case CARD_SNOWWHITE_SPECIAL2_MAGIC_MIRROR_RAIN:
             if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
                 return -1;
@@ -725,7 +725,7 @@ int handle_snowwhite_ultimate(sPlayer* attacker, sPlayer* defender, const Card* 
                 move_card(&defender->hand, &defender->graveyard);
             }
             draw_card(defender, 4);
-            break;
+            return 0;
         case CARD_SNOWWHITE_SPECIAL3_BREWED_DISASTER:
             if(abs(attacker->locate[0] - defender->locate[0]) >= 3){
                 return -1;
@@ -746,9 +746,9 @@ int handle_snowwhite_ultimate(sPlayer* attacker, sPlayer* defender, const Card* 
             scanf("%d", &card);
             pushbackVector(&defender->deck, defender->graveyard.array[card]);
             eraseVector(&defender->graveyard, card);
-            break;
+            return 0;
         default:
-            break;
+            return -1;
     }
 }
 

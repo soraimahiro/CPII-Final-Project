@@ -30,11 +30,11 @@ int32_t confirmButtonCount = 0;
 uStateComponent stateComponent;
 
 static const CharacterID selectable_characters[6] = {
-    CHARACTER_REDHOOD,       // 小紅帽
-    CHARACTER_MULAN,         // 花木蘭
+    CHARACTER_REDHOOD,       // 小紅帽         // 花木蘭
     CHARACTER_SNOWWHITE,     // 白雪公主
     CHARACTER_SLEEPINGBEAUTY,// 睡美人
-    CHARACTER_ALICE,         // 愛麗絲
+    CHARACTER_ALICE,
+    CHARACTER_MULAN,         // 愛麗絲
     CHARACTER_KAGUYA        // 輝夜姬
 };
 
