@@ -440,7 +440,7 @@ void attack(sPlayer* defender, int total_damage) {
         total_damage -= ki(defender);
         if (total_damage < 0) total_damage = 0;
     }
-
+    DEBUG_PRINT("atk1\n");
     int remaining_damage = 0;
     if (defender->defense > 0) {
         if (defender->defense >= total_damage) {
@@ -457,7 +457,7 @@ void attack(sPlayer* defender, int total_damage) {
                         defender->life - total_damage : 0;
     }
     // TODO: if (defender->life <= defender->specialGate) 必殺技();
-
+    DEBUG_PRINT("atk2\n");
     if (remaining_damage) {
         if (attacker->character == CHARACTER_SLEEPINGBEAUTY) {
             attacker->sleepingBeauty.caused_damage += remaining_damage;
@@ -470,6 +470,7 @@ void attack(sPlayer* defender, int total_damage) {
                     defender->sleepingBeauty.AWAKEN = 1;
                 }
             }
+            DEBUG_PRINT("atk3\n");
             if (countCard(&defender->usecards, CARD_SLEEPINGBEAUTY_SPECIAL2_DAYMARE)) {
                 int draw_count = min(remaining_damage, 6 - defender->sleepingBeauty.dayNightmareDrawRemind);
                 draw_card(defender, draw_count);
@@ -479,6 +480,7 @@ void attack(sPlayer* defender, int total_damage) {
             
         
     }
+
 }
 
 void defend(sPlayer* player, int total_defense) {
@@ -632,7 +634,7 @@ void handle_skills(sPlayer* attacker, sPlayer* defender, int basicIndex) {
     
     
     if (skill_card_id <= 19) {
-        if (!handle_redhood_skills(attacker, defender, skill_card, basic_card->level)) {
+        if (handle_redhood_skills(attacker, defender, skill_card, basic_card->level)) {
             DEBUG_PRINT("range not enough\n");
             return;
         };
@@ -654,25 +656,25 @@ void handle_skills(sPlayer* attacker, sPlayer* defender, int basicIndex) {
                 attacker->sleepingBeauty.usedmeta1 ^= 0b10;
             }
         }
-        if (!handle_sleepingbeauty_skills(attacker, defender, skill_card, level)) {
+        if (handle_sleepingbeauty_skills(attacker, defender, skill_card, level)) {
             printf("range not enough\n");
             return;
         }
     }
     else if (skill_card_id <= 67) {
-        if (!handle_mulan_skills(attacker, defender, skill_card, basic_card->level)) {
+        if (handle_mulan_skills(attacker, defender, skill_card, basic_card->level)) {
             printf("range not enough\n");
             return;
         }
     }
     else if (skill_card_id <= 79) {
-        if (!handle_kaguya_skills(attacker, defender, skill_card, basic_card->level)) {
+        if (handle_kaguya_skills(attacker, defender, skill_card, basic_card->level)) {
             printf("range not enough\n");
             return;
         }
     }
     else {
-        if (!handle_matchgirl_skills(attacker, defender, skill_card, basic_card->level)) {
+        if (handle_matchgirl_skills(attacker, defender, skill_card, basic_card->level)) {
             printf("range not enough\n");
             return;
         }
@@ -1039,23 +1041,19 @@ void bot_act() {
     int32_t hand_size = current_player->hand.SIZE;
     
     // 複製手牌到新陣列
-    for (int i = 0; i < hand_size; i++) {
-        hand_cards[i] = current_player->hand.array[i];
-    }
-    
-    // 洗牌
-    srand(time(NULL));
-    for (int i = hand_size - 1; i > 0; i--) {
-        int j = rand() % (i + 1);
-        // 交換元素
-        int32_t temp = hand_cards[i];
-        hand_cards[i] = hand_cards[j];
-        hand_cards[j] = temp;
+    int i = 0;
+    int j = 0;
+    while (j < hand_size) {
+        if (current_player->hand.array[i] <= 6) {
+            hand_cards[i] = j;
+            i++;
+        }
+        j++;
     }
     
     // 依序執行每張牌
-    for (int i = 0; i < hand_size; i++) {
-        activation_phase(hand_cards[i]);
+    for (j = 0; j < i; j++) {
+        activation_phase(hand_cards[j]);
     }
 } 
 
