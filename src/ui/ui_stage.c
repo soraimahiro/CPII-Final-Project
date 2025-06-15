@@ -59,7 +59,7 @@ static void init_card_area_buttons(sCardAreaButtons* areaButtons, const char* ar
             70,                            // 宽度
             25                             // 高度
         };
-        areaButtons->buttons[0] = create_button(sortButtonRect, "整理", textColors, bgColors, borderColors, 14, 2);
+        // areaButtons->buttons[0] = create_button(sortButtonRect, "整理", textColors, bgColors, borderColors, 14, 2);
         
         // 為每張手牌創建按鈕
         int32_t maxCardsPerRow = areaRect.w / 150; // 每行最多顯示的卡牌數
@@ -124,7 +124,7 @@ static void init_card_area_buttons(sCardAreaButtons* areaButtons, const char* ar
             70,                            // 宽度
             25                             // 高度
         };
-        areaButtons->buttons[0] = create_button(sortButtonRect, "整理", textColors, bgColors, borderColors, 14, 2);
+        // areaButtons->buttons[0] = create_button(sortButtonRect, "整理", textColors, bgColors, borderColors, 14, 2);
         
         // 為每張反轉牌創建按鈕
         int32_t maxCardsPerRow = areaRect.w / 150; // 每行最多顯示的卡牌數
