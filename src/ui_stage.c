@@ -17,6 +17,85 @@ static const SDL_Color lightblue2 = {120, 190, 200, 255};
 static const SDL_Color green = {0, 200, 0, 255};
 static const SDL_Color red = {200, 0, 0, 255};
 
+// 卡牌區域按鈕管理函數（前置定義）
+// 初始化卡牌區域按鈕
+static void init_card_area_buttons(sCardAreaButtons* areaButtons, const char* areaName, SDL_Rect areaRect) {
+    strncpy(areaButtons->areaName, areaName, sizeof(areaButtons->areaName) - 1);
+    areaButtons->areaName[sizeof(areaButtons->areaName) - 1] = '\0';
+    areaButtons->areaRect = areaRect;
+    areaButtons->enabled = true;
+    areaButtons->buttonCount = 0;
+    areaButtons->buttons = NULL;
+    
+    // 為手牌區域創建示例按鈕
+    if (strcmp(areaName, "手牌") == 0) {
+        areaButtons->buttonCount = 1;
+        areaButtons->buttons = calloc(areaButtons->buttonCount, sizeof(sButton*));
+        
+        SDL_Color textColors[] = {white, white, black, black};
+        SDL_Color bgColors[] = {gray1, gray2, lightblue1, lightblue2};
+        SDL_Color borderColors[] = {white, white, white, white};
+        
+        // 在手牌區域右上角創建一個按鈕
+        SDL_Rect buttonRect = {
+            areaRect.x + areaRect.w - 80,  // 距離右邊80像素
+            areaRect.y + 5,                // 距離上邊5像素
+            70,                            // 寬度
+            25                             // 高度
+        };
+        
+        areaButtons->buttons[0] = create_button(buttonRect, "整理", textColors, bgColors, borderColors, 14, 2);
+    }
+}
+
+// 清理卡牌區域按鈕
+static void cleanup_card_area_buttons(sCardAreaButtons* areaButtons) {
+    if (areaButtons->buttons) {
+        for (int32_t i = 0; i < areaButtons->buttonCount; i++) {
+            if (areaButtons->buttons[i]) {
+                free_button(areaButtons->buttons[i]);
+                areaButtons->buttons[i] = NULL;
+            }
+        }
+        free(areaButtons->buttons);
+        areaButtons->buttons = NULL;
+    }
+    areaButtons->buttonCount = 0;
+    areaButtons->enabled = false;
+}
+
+// 繪製卡牌區域按鈕
+static void draw_card_area_buttons(sCardAreaButtons* areaButtons) {
+    if (!areaButtons->enabled || !areaButtons->buttons) {
+        return;
+    }
+    
+    for (int32_t i = 0; i < areaButtons->buttonCount; i++) {
+        if (areaButtons->buttons[i]) {
+            int8_t buttonType = mouse_in_button(areaButtons->buttons[i]) ? 1 : 0;
+            draw_button(areaButtons->buttons[i], buttonType);
+        }
+    }
+}
+
+// 處理卡牌區域按鈕事件
+static bool handle_card_area_button_events(sCardAreaButtons* areaButtons, SDL_Event* event) {
+    if (!areaButtons->enabled || !areaButtons->buttons || event->type != SDL_MOUSEBUTTONDOWN) {
+        return false;
+    }
+    
+    if (event->button.button == SDL_BUTTON_LEFT) {
+        for (int32_t i = 0; i < areaButtons->buttonCount; i++) {
+            if (areaButtons->buttons[i] && mouse_in_button(areaButtons->buttons[i])) {
+                printf("Card area button clicked in %s area: button %d\n", areaButtons->areaName, i);
+                return true;  // 事件已處理
+            }
+        }
+    }
+    
+    return false;  // 事件未處理
+}
+
 void draw_left_column_stage() {
     // Draw background
     SDL_Rect leftRect = {0, 0, LEFT_COLUMN_WIDTH, SCREEN_HEIGHT};
@@ -165,16 +244,17 @@ void draw_middle_column_stage() {
     
     // My hand cards - symmetric to opponent hand cards
     int32_t handY = 600; // Position symmetric to opponent hand
+    SDL_Rect handRect = {startX + 10, handY, width - 20, 80};
     draw_card_area_stage("手牌", &game.players[current_player].hand, 
                         startX + 10, handY, width - 20, 80, true); // Same height as opponent
     
-    // Clean up temporary vectors
-    clearVector(&opponentAttackSkills);
-    clearVector(&opponentDefenseSkills);
-    clearVector(&opponentMoveSkills);
-    clearVector(&myAttackSkills);
-    clearVector(&myDefenseSkills);
-    clearVector(&myMoveSkills);
+    // 初始化手牌區域按鈕（如果還沒初始化）
+    if (battleUIStage.handAreaButtons.buttonCount == 0) {
+        init_card_area_buttons(&battleUIStage.handAreaButtons, "手牌", handRect);
+    }
+    
+    // 繪製手牌區域按鈕
+    draw_card_area_buttons(&battleUIStage.handAreaButtons);
 }
 
 void init_battle_ui_stage() {
@@ -446,6 +526,11 @@ void cleanup_battle_ui_stage() {
             battleUIStage.cardButtons[i] = NULL;
         }
     }
+    
+    // 清理卡牌區域按鈕
+    cleanup_card_area_buttons(&battleUIStage.handAreaButtons);
+    cleanup_card_area_buttons(&battleUIStage.opponentHandAreaButtons);
+    cleanup_card_area_buttons(&battleUIStage.skillAreaButtons);
 }
 
 void draw_battle_grid_stage() {
@@ -742,6 +827,17 @@ void handle_battle_events_stage(SDL_Event* event) {
     if(event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
         int32_t mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
+        
+        // 處理卡牌區域按鈕事件（優先處理）
+        if (handle_card_area_button_events(&battleUIStage.handAreaButtons, event)) {
+            return;  // 事件已被處理，不繼續處理其他事件
+        }
+        if (handle_card_area_button_events(&battleUIStage.opponentHandAreaButtons, event)) {
+            return;
+        }
+        if (handle_card_area_button_events(&battleUIStage.skillAreaButtons, event)) {
+            return;
+        }
         
         // Handle popup close events first
         bool anyPopupOpen = (battleUIStage.showShopPopup || 
