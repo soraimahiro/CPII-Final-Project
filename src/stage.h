@@ -23,9 +23,9 @@
 #include "ui_stage.h"
 
 int beginning_phase();
-int refresh_phase(sPlayer* current_player);
+int refresh_phase();
 int activation_phase();
-int ending_phase(sPlayer* current_player);
+int ending_phase();
 
 // action
 int focus();

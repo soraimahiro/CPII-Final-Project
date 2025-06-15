@@ -320,6 +320,15 @@ void init_character(sPlayer* p){
             break;
         case CHARACTER_SNOWWHITE:
             p->snowWhite.remindPosion = initVector();
+            for(int32_t i = 0; i < 6; i++){
+                pushbackVector(&p->snowWhite.remindPosion, CARD_SNOWWHITE_STATUS_POISON3);
+            }
+            for(int32_t i = 0; i < 6; i++){
+                pushbackVector(&p->snowWhite.remindPosion, CARD_SNOWWHITE_STATUS_POISON2);
+            }
+            for(int32_t i = 0; i < 6; i++){
+                pushbackVector(&p->snowWhite.remindPosion, CARD_SNOWWHITE_STATUS_POISON1);
+            }
             break;
         case CHARACTER_SLEEPINGBEAUTY:
             p->sleepingBeauty.AWAKEN_TOKEN = 0;
@@ -449,7 +458,8 @@ void attack(sPlayer* defender, int total_damage) {
             defender->life = (defender->life > remaining_damage) ? 
                             defender->life - remaining_damage : 0;
         }
-    } else {
+    } 
+    else {
         defender->life = (defender->life > total_damage) ? 
                         defender->life - total_damage : 0;
     }
@@ -484,21 +494,24 @@ void defend(sPlayer* player, int total_defense) {
 }
 
 void move(sPlayer* player, int total_move) {
+    sPlayer *oppoent = &game.players[(game.now_turn_player_id+1)%2];
     printf("\nChoose direction (-1: left, 1: right): ");
-    int direction;
-    while (1) {
-        scanf("%d", &direction);
-        player->locate[0] += total_move * direction;
-
-        if (total_move == 1 && player->locate[0] == game.players[0].locate[0] && player->locate[0] == game.players[1].locate[0]) {
-            printf("不能與對手同一格\n");
-            player->locate[0] -= total_move * direction;
-        }
-        else {
-            if (player->locate[0] < 1) player->locate[0] = 1;
-            else if (player->locate[0] > 9) player->locate[0] = 9;
-            break;
-        }
+    int32_t direction;
+    scanf("%d", &direction);
+    int32_t dest = 0, src = player->locate[0];
+    if (player->locate[0] + total_move*direction == oppoent->locate[0]) {
+        dest = src + (total_move-1)*direction;
+    }
+    else if (player->locate[0] + total_move*direction < 1) dest = 1;
+    else if (player->locate[0] + total_move*direction > 9) dest = 9;
+    else{
+        dest = src + total_move*direction;
+    }
+    player->locate[0] = dest;
+    if(player->character == CHARACTER_SNOWWHITE && player->snowWhite.meta3 &&
+      (dest > oppoent->locate[0] && src < oppoent->locate[0]) ||
+      (dest < oppoent->locate[0] && src > oppoent->locate[0])){
+        put_posion(player, oppoent, &oppoent->graveyard);
     }
 }
 
@@ -575,6 +588,9 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int specific_id) {
         printf("Energy Gained: %d\n", total_energy);
         printf("Defender's HP: %d/%d\n", defender->life, defender->maxlife);
         printf("Defender's Defense: %d/%d\n", defender->defense, defender->maxdefense);
+    }
+    if(attacker->character == CHARACTER_SNOWWHITE && attacker->snowWhite.meta1 && total_damage > 2){
+        put_posion(attacker, defender, &defender->graveyard);
     }
 }
 
@@ -655,12 +671,12 @@ void handle_move(sPlayer* player, int specific_id) {
         
         if (choice == 0) {
             continue_move = false;
-            continue;
+            //continue;
         }
         
         if (choice < 1 || choice > player->hand.SIZE) {
             printf("Invalid choice!\n");
-            continue;
+            //continue;
         }
         
         // Get the selected card
@@ -668,7 +684,7 @@ void handle_move(sPlayer* player, int specific_id) {
         
         if (!is_basic_card(card_id, TYPE_MOVE) && card_id != 10) {
             printf("Not a move card!\n");
-            continue;
+            //continue;
         }
         
         // Calculate move distance and energy
@@ -844,7 +860,13 @@ void handle_ultimate(sPlayer* attacker, sPlayer* defender) {
             printf("invalid!\n");
             return;
         }
-    } 
+    }
+    else if(ultimate_card_id <= 31){
+        if(handle_snowwhite_ultimate(attacker, defender, ultimate_card)){
+            printf("invalid!\n");
+            return;
+        }
+    }
     pushbackVector(&attacker->usecards, ultimate_card_id);
     eraseVector(&attacker->hand, choice - 1);
 }
@@ -900,7 +922,7 @@ void game_play_logic() {
 
     // 清理階段
     printf("\n=== Refresh Phase ===\n");
-    refresh_phase(current_player); 
+    refresh_phase(); 
 
     // 行動階段
     bool action_phase_end = false;
@@ -1098,7 +1120,33 @@ void game_play_logic() {
     
     // 結束階段
     printf("\n=== End Phase ===\n");
-    ending_phase(current_player);
+    ending_phase();
     first_render = true;
     waiting_for_input = true;
+}
+
+int activation_phase(int32_t cardID){
+    sPlayer* current_player = &game.players[game.now_turn_player_id];
+    sPlayer* opponent = &game.players[(game.now_turn_player_id + 1) % 2];
+
+    if(cardID >= CARD_BASIC_ATK1 && cardID <= CARD_BASIC_ATK3){
+        handle_attack(current_player, opponent, cardID);
+    }
+    else if(cardID >= CARD_BASIC_DEF1 && cardID <= CARD_BASIC_DEF3){
+        handle_defense(current_player, cardID);
+    }
+    else if(cardID >= CARD_BASIC_MOVE1 && cardID <= CARD_BASIC_MOVE3){
+        handle_move(current_player, cardID);
+    }
+    else if(cardID == CARD_BASIC_COMMON){
+
+    }
+    
+    return 0; // 加入返回值
+}
+
+int next_phase(){
+    ending_phase();
+    beginning_phase();
+    refresh_phase();
 }

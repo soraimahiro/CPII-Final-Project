@@ -76,7 +76,9 @@ int beginning_phase() {
     return 0;
 }
 
-int refresh_phase(sPlayer* current_player){
+int refresh_phase(){
+    sPlayer *current_player = &(game.players[game.now_turn_player_id]);
+    sPlayer *pOpponentPlayer = &(game.players[(game.now_turn_player_id + 1) % 2]);
     current_player->defense = 0;
     int card_id;
     while (current_player->usecards.SIZE > 0) {
@@ -88,22 +90,9 @@ int refresh_phase(sPlayer* current_player){
     return 0;
 }
 
-int activation_phase(){
-    int8_t active = 0;
-    int32_t result = 0;
-    do{
-        activation_menu(&active);
-        switch (active) {
-            case 1:
-                result = focus();
-                break;
-        }
-    } while(result != 0 && !winner);
-    
-    return 0; // 加入返回值
-}
-
-int ending_phase(sPlayer* current_player){
+int ending_phase(){
+    sPlayer *current_player = &(game.players[game.now_turn_player_id]);
+    sPlayer *pOpponentPlayer = &(game.players[(game.now_turn_player_id + 1) % 2]);
     current_player->energy = 0;
     printf("Energy reset to 0\n");
 
@@ -164,28 +153,3 @@ int focus(){
     return 0;
 }
 
-int attack_action(){
-    int32_t attackTarget = -1;
-    sPlayer *pNowTurnPlayer = &(game.players[game.now_turn_player_id]);
-    int8_t playerTeam = pNowTurnPlayer->team; 
-    int32_t playerCount = TOTAL_PLAYER;
-
-    for(int32_t i = 0; i < playerCount; i++){
-        if(game.players[i].team != playerTeam && abs(game.players[i].locate[0] - pNowTurnPlayer->locate[0]) == 1){ // 檢查是否有敵人在射程1
-            attackTarget = i;
-            break;
-        }
-    }
-    if(attackTarget == -1){
-        printf("沒有對手在射程內\n");
-        return 1;
-    }
-    
-    return 0; // 加入返回值
-}
-int defense_action();
-int move_action();
-int use_a_skill();
-int use_an_epic_card();
-int power_up_action();
-int component_action();
