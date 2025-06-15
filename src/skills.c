@@ -365,7 +365,7 @@ int handle_mulan_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_
                     discard_cards(defender, 1, true);  // Randomly discard one card
                 }
             }
-            attack(defender, skill + level + cost_ki);
+            attack(defender, skill_card->level + level + cost_ki);
             return 0;
         }
         case CARD_MULAN_DEF1_STILLNESS:
