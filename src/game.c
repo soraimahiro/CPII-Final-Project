@@ -434,7 +434,8 @@ void attack(sPlayer* defender, int total_damage) {
             defender->life = (defender->life > remaining_damage) ? 
                             defender->life - remaining_damage : 0;
         }
-    } else {
+    } 
+    else {
         defender->life = (defender->life > total_damage) ? 
                         defender->life - total_damage : 0;
     }
@@ -446,19 +447,24 @@ void defend(sPlayer* player, int total_defense) {
 }
 
 void move(sPlayer* player, int total_move) {
+    sPlayer *oppoent = &game.players[(game.now_turn_player_id+1)%2];
     printf("\nChoose direction (-1: left, 1: right): ");
-    int direction;
-    while (total_move > 0) {
-        scanf("%d", &direction);
-        player->locate[0] += direction;
-
-        if (total_move == 1 && player->locate[0] == game.players[0].locate[0] && player->locate[0] == game.players[1].locate[0]) {
-            printf("不能與對手同一格\n");
-            player->locate[0] -= direction;
-        }
-        else total_move--;
-        if (player->locate[0] < 1) player->locate[0] = 1;
-        else if (player->locate[0] > 9) player->locate[0] = 9;
+    int32_t direction;
+    scanf("%d", &direction);
+    int32_t dest = 0, src = player->locate[0];
+    if (player->locate[0] + total_move*direction == oppoent->locate[0]) {
+        dest = src + (total_move-1)*direction;
+    }
+    else if (player->locate[0] + total_move*direction < 1) dest = 1;
+    else if (player->locate[0] + total_move*direction > 9) dest = 9;
+    else{
+        dest = src + total_move*direction;
+    }
+    player->locate[0] = dest;
+    if(player->character == CHARACTER_SNOWWHITE && player->snowWhite.meta3 &&
+      (dest > oppoent->locate[0] && src < oppoent->locate[0]) ||
+      (dest < oppoent->locate[0] && src > oppoent->locate[0])){
+        put_posion(player, oppoent, &oppoent->graveyard);
     }
 }
 
@@ -595,19 +601,19 @@ void handle_move(sPlayer* player) {
     int total_energy = 0;
     bool continue_move = true;
     
-    while (continue_move) {
+   //while (continue_move) {
         printf("\nChoose a move card (1-%d) or 0 to stop: ", player->hand.SIZE);
         int choice;
         scanf("%d", &choice);
         
         if (choice == 0) {
             continue_move = false;
-            continue;
+            //continue;
         }
         
         if (choice < 1 || choice > player->hand.SIZE) {
             printf("Invalid choice!\n");
-            continue;
+            //continue;
         }
         
         // Get the selected card
@@ -615,7 +621,7 @@ void handle_move(sPlayer* player) {
         
         if (!is_basic_card(card_id, TYPE_MOVE) && card_id != 10) {
             printf("Not a move card!\n");
-            continue;
+            //continue;
         }
         
         // Calculate move distance and energy
@@ -628,7 +634,7 @@ void handle_move(sPlayer* player) {
         eraseVector(&player->hand, choice - 1);
         
         printf("Added %d move distance and energy\n", card_value);
-    }
+    //}
     
     if (total_move > 0) {
         // Apply movement

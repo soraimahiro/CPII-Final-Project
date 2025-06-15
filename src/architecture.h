@@ -45,6 +45,10 @@ typedef struct _sPlayer {
     // Snow White 1
     struct {
         vector remindPosion;
+        bool meta1;
+        bool meta2;
+        bool meta3;
+        int32_t meta4;
     } snowWhite;
 
     // sleeping Beauty 2

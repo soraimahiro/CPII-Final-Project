@@ -18,5 +18,6 @@ int handle_kaguya_skills(sPlayer* attacker, sPlayer* defender, const Card* skill
 int handle_matchgirl_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
 
 void knockback(sPlayer* attacker, sPlayer* defender, int distance);
+int put_posion(sPlayer* attacker, sPlayer* defender, vector *dest);
 
 #endif

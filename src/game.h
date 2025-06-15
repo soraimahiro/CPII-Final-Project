@@ -35,6 +35,7 @@ void print_hand_cards(sPlayer* player);
 void attack(sPlayer* defender, int total_damage);
 void defend(sPlayer* player, int total_defense);
 void move(sPlayer* player, int total_move);
+void draw_card(sPlayer* player, int count);
 
 #endif
 
