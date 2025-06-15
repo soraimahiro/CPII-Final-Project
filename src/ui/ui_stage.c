@@ -352,14 +352,59 @@ void draw_middle_column_stage() {
     draw_card_area_stage("必殺牌", &game.players[current_player].specialDeck, 
                         startX + 10, myAreasY, skillCardWidth, 80, true);
     
-    draw_card_area_stage("攻擊技能", &game.players[current_player].attackSkill, 
-                        startX + 10 + skillCardWidth, myAreasY, skillCardWidth, 80, true);
+    // 攻擊技能牌
+    SDL_Rect attackRect = {startX + 10 + skillCardWidth, myAreasY, skillCardWidth, 80};
+    SDL_SetRenderDrawColor(uiBase.renderer, 80, 80, 80, 255);
+    SDL_RenderFillRect(uiBase.renderer, &attackRect);
+    SDL_SetRenderDrawColor(uiBase.renderer, 200, 200, 200, 255);
+    SDL_RenderDrawRect(uiBase.renderer, &attackRect);
+    draw_text("攻擊技能", attackRect.x + 5, attackRect.y + 5, white, 14);
     
-    draw_card_area_stage("防禦技能", &game.players[current_player].defenseSkill, 
-                        startX + 10 + skillCardWidth * 2, myAreasY, skillCardWidth, 80, true);
+    if (game.players[current_player].attackSkill.SIZE > 0) {
+        const Card* attackCard = getCardData(game.players[current_player].attackSkill.array[0]);
+        if (attackCard) {
+            draw_text_center(attackCard->name, attackRect.x + attackRect.w/2, attackRect.y + 30, white, 14);
+            char costText[20];
+            snprintf(costText, 20, "費用: %d", attackCard->cost);
+            draw_text_center(costText, attackRect.x + attackRect.w/2, attackRect.y + 50, lightblue1, 12);
+        }
+    }
     
-    draw_card_area_stage("移動技能", &game.players[current_player].moveSkill, 
-                        startX + 10 + skillCardWidth * 3, myAreasY, skillCardWidth, 80, true);
+    // 防禦技能牌
+    SDL_Rect defenseRect = {startX + 10 + skillCardWidth * 2, myAreasY, skillCardWidth, 80};
+    SDL_SetRenderDrawColor(uiBase.renderer, 80, 80, 80, 255);
+    SDL_RenderFillRect(uiBase.renderer, &defenseRect);
+    SDL_SetRenderDrawColor(uiBase.renderer, 200, 200, 200, 255);
+    SDL_RenderDrawRect(uiBase.renderer, &defenseRect);
+    draw_text("防禦技能", defenseRect.x + 5, defenseRect.y + 5, white, 14);
+    
+    if (game.players[current_player].defenseSkill.SIZE > 0) {
+        const Card* defenseCard = getCardData(game.players[current_player].defenseSkill.array[0]);
+        if (defenseCard) {
+            draw_text_center(defenseCard->name, defenseRect.x + defenseRect.w/2, defenseRect.y + 30, white, 14);
+            char costText[20];
+            snprintf(costText, 20, "費用: %d", defenseCard->cost);
+            draw_text_center(costText, defenseRect.x + defenseRect.w/2, defenseRect.y + 50, lightblue1, 12);
+        }
+    }
+    
+    // 移動技能牌
+    SDL_Rect moveRect = {startX + 10 + skillCardWidth * 3, myAreasY, skillCardWidth, 80};
+    SDL_SetRenderDrawColor(uiBase.renderer, 80, 80, 80, 255);
+    SDL_RenderFillRect(uiBase.renderer, &moveRect);
+    SDL_SetRenderDrawColor(uiBase.renderer, 200, 200, 200, 255);
+    SDL_RenderDrawRect(uiBase.renderer, &moveRect);
+    draw_text("移動技能", moveRect.x + 5, moveRect.y + 5, white, 14);
+    
+    if (game.players[current_player].moveSkill.SIZE > 0) {
+        const Card* moveCard = getCardData(game.players[current_player].moveSkill.array[0]);
+        if (moveCard) {
+            draw_text_center(moveCard->name, moveRect.x + moveRect.w/2, moveRect.y + 30, white, 14);
+            char costText[20];
+            snprintf(costText, 20, "費用: %d", moveCard->cost);
+            draw_text_center(costText, moveRect.x + moveRect.w/2, moveRect.y + 50, lightblue1, 12);
+        }
+    }
     
     // My used cards area (right side)
     SDL_Rect metamorphosisRect = {startX + largeAreaWidth + 30, myAreasY, largeAreaWidth, 80};
@@ -1023,6 +1068,144 @@ void draw_hover_preview(const char* title, vector* cards, int32_t mouseX, int32_
 }
 
 void handle_battle_events_stage(SDL_Event* event) {
+    if (event->type == SDL_MOUSEBUTTONDOWN) {
+        int32_t mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        
+        // 處理棄牌堆點擊
+        if (battleUIStage.opponentGraveButton && mouse_in_button(battleUIStage.opponentGraveButton)) {
+            battleUIStage.showOpponentGravePopup = true;
+            return;
+        }
+        if (battleUIStage.myGraveButton && mouse_in_button(battleUIStage.myGraveButton)) {
+            battleUIStage.showMyGravePopup = true;
+            return;
+        }
+        
+        // 處理棄牌堆彈窗關閉
+        if (battleUIStage.showOpponentGravePopup || battleUIStage.showMyGravePopup) {
+            SDL_Rect closeButtonRect = {
+                SCREEN_WIDTH/2 + 310,
+                SCREEN_HEIGHT/2 - 240,
+                30, 30
+            };
+            
+            if (mouseX >= closeButtonRect.x && mouseX < closeButtonRect.x + closeButtonRect.w &&
+                mouseY >= closeButtonRect.y && mouseY < closeButtonRect.y + closeButtonRect.h) {
+                battleUIStage.showOpponentGravePopup = false;
+                battleUIStage.showMyGravePopup = false;
+                return;
+            }
+        }
+        
+        // 處理技能牌商店點擊
+        if (battleUIStage.showMyAttackSkillPopup || 
+            battleUIStage.showMyDefenseSkillPopup || 
+            battleUIStage.showMyMoveSkillPopup) {
+            
+            // 檢查是否點擊關閉按鈕
+            SDL_Rect closeButtonRect = {
+                SCREEN_WIDTH/2 + 310,
+                SCREEN_HEIGHT/2 - 240,
+                30, 30
+            };
+            
+            if (mouseX >= closeButtonRect.x && mouseX < closeButtonRect.x + closeButtonRect.w &&
+                mouseY >= closeButtonRect.y && mouseY < closeButtonRect.y + closeButtonRect.h) {
+                battleUIStage.showMyAttackSkillPopup = false;
+                battleUIStage.showMyDefenseSkillPopup = false;
+                battleUIStage.showMyMoveSkillPopup = false;
+                return;
+            }
+            
+            // 檢查是否點擊購買按鈕
+            int32_t startY = SCREEN_HEIGHT/2 - 170;
+            int32_t cardHeight = 100;
+            int32_t cardWidth = 200;
+            int32_t cardsPerRow = 3;
+            int32_t padding = 20;
+            
+            // 獲取對應的技能牌vector
+            vector* skillCards;
+            if (battleUIStage.showMyAttackSkillPopup) {
+                skillCards = &game.players[game.now_turn_player_id].attackSkill;
+            } else if (battleUIStage.showMyDefenseSkillPopup) {
+                skillCards = &game.players[game.now_turn_player_id].defenseSkill;
+            } else {
+                skillCards = &game.players[game.now_turn_player_id].moveSkill;
+            }
+            
+            int32_t validCardCount = 0;
+            for (int32_t i = 0; i < skillCards->SIZE; i++) {
+                const Card* cardData = getCardData(skillCards->array[i]);
+                if (cardData) {
+                    int32_t row = validCardCount / cardsPerRow;
+                    int32_t col = validCardCount % cardsPerRow;
+                    
+                    int32_t cardX = SCREEN_WIDTH/2 - 340 + padding + col * (cardWidth + padding);
+                    int32_t cardY = startY + row * (cardHeight + padding);
+                    
+                    // 整個卡片作為按鈕
+                    SDL_Rect cardRect = {cardX, cardY, cardWidth, cardHeight};
+                    
+                    if (mouseX >= cardRect.x && mouseX < cardRect.x + cardRect.w &&
+                        mouseY >= cardRect.y && mouseY < cardRect.y + cardRect.h) {
+                        
+                        // 只有第一張牌可以購買
+                        if (cardData-> cost != 0 && validCardCount == 0 && game.players[game.now_turn_player_id].energy >= cardData->cost) {
+                            // 扣除能量
+                            game.players[game.now_turn_player_id].energy -= cardData->cost;
+                            
+                            // 將卡片加入棄牌堆
+                            pushbackVector(&game.players[game.now_turn_player_id].graveyard, skillCards->array[i]);
+                            
+                            // 將技能牌堆的該張卡片標記為已使用（暗掉）
+                            skillCards->array[i] = -1;  // 使用 -1 表示卡片已使用
+                            const Card* nextCardData = getCardData(skillCards->array[i + 1]);
+                            if (nextCardData->cost == 0 && validCardCount == 0 && game.players[game.now_turn_player_id].energy >= nextCardData->cost) {
+                                // 將卡片加入反轉牌區域
+                                pushbackVector(&game.players[game.now_turn_player_id].metamorphosis, skillCards->array[i + 1]);
+                                DEBUG_PRINT_VEC((&game.players[game.now_turn_player_id].metamorphosis), "metamorphosis");
+                                // 將技能牌堆的該張卡片標記為已使用（暗掉）
+                                skillCards->array[i + 1] = -1;  // 使用 -1 表示卡片已使用
+                            }
+                        }
+                        return;
+                    }
+                    validCardCount++;
+                }
+            }
+            return;
+        }
+        
+        // 處理技能牌區域點擊
+        int32_t middleStartX = LEFT_COLUMN_WIDTH;
+        int32_t width = MIDDLE_COLUMN_WIDTH;
+        int32_t largeAreaWidth = width / 2 - 20;
+        int32_t skillCardWidth = largeAreaWidth / 4;
+        int32_t myAreasY = 510;
+        
+        SDL_Rect myAttackRect = {middleStartX + 10 + skillCardWidth, myAreasY, skillCardWidth, 80};
+        SDL_Rect myDefenseRect = {middleStartX + 10 + skillCardWidth * 2, myAreasY, skillCardWidth, 80};
+        SDL_Rect myMoveRect = {middleStartX + 10 + skillCardWidth * 3, myAreasY, skillCardWidth, 80};
+        
+        if (mouseX >= myAttackRect.x && mouseX < myAttackRect.x + myAttackRect.w &&
+            mouseY >= myAttackRect.y && mouseY < myAttackRect.y + myAttackRect.h) {
+            battleUIStage.showMyAttackSkillPopup = true;
+            return;
+        }
+        if (mouseX >= myDefenseRect.x && mouseX < myDefenseRect.x + myDefenseRect.w &&
+            mouseY >= myDefenseRect.y && mouseY < myDefenseRect.y + myDefenseRect.h) {
+            battleUIStage.showMyDefenseSkillPopup = true;
+            return;
+        }
+        if (mouseX >= myMoveRect.x && mouseX < myMoveRect.x + myMoveRect.w &&
+            mouseY >= myMoveRect.y && mouseY < myMoveRect.y + myMoveRect.h) {
+            battleUIStage.showMyMoveSkillPopup = true;
+            return;
+        }
+    }
+    
     if(event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
         int32_t mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
@@ -1062,8 +1245,9 @@ void handle_battle_events_stage(SDL_Event* event) {
         
         if(anyPopupOpen) {
             // 檢查是否點擊了彈窗外部
-            if(mouseX < SCREEN_WIDTH/2 - 350 || mouseX > SCREEN_WIDTH/2 + 350 ||
-               mouseY < SCREEN_HEIGHT/2 - 250 || mouseY > SCREEN_HEIGHT/2 + 250) {
+            SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 450, SCREEN_HEIGHT/2 - 250, 900, 500};
+            if (mouseX < dialogRect.x || mouseX > dialogRect.x + dialogRect.w ||
+                mouseY < dialogRect.y || mouseY > dialogRect.y + dialogRect.h) {
                 // 關閉所有彈窗
                 battleUIStage.showShopPopup = false;
                 battleUIStage.showOpponentGravePopup = false;
@@ -1080,6 +1264,56 @@ void handle_battle_events_stage(SDL_Event* event) {
                 battleUIStage.showCardDetailPopup = false;
                 return;
             }
+            
+            // 處理商店彈窗中的卡片點擊
+            if (battleUIStage.showShopPopup) {
+                int32_t colWidth = 200;
+                int32_t startX = dialogRect.x + 50;
+                int32_t startY = dialogRect.y + 120;
+                
+                for (int32_t type = 0; type < 4; type++) {
+                    int32_t colX = startX + type * colWidth;
+                    int32_t maxLevel = (type == 3) ? 1 : 3;
+                    
+                    for (int32_t level = 1; level <= maxLevel; level++) {
+                        int32_t cardY = startY + 40 + (level - 1) * 70;
+                        SDL_Rect cardRect = {colX + 10, cardY, colWidth - 20, 60};
+                        
+                        if (mouseX >= cardRect.x && mouseX <= cardRect.x + cardRect.w &&
+                            mouseY >= cardRect.y && mouseY <= cardRect.y + cardRect.h) {
+                            
+                            int32_t cardId = (type == 3) ? 10 : (type * 3 + level);
+                            const Card* cardData = getCardData(cardId);
+                            
+                            if (cardData) {
+                                bool canBuy = false;
+                                if (type < 3) {
+                                    canBuy = game.basicBuyDeck[type][level-1].SIZE > 0 && 
+                                            game.players[game.now_turn_player_id].energy >= cardData->cost;
+                                } else {
+                                    canBuy = game.basicBuyDeck[3][0].SIZE > 0 && 
+                                            game.players[game.now_turn_player_id].energy >= cardData->cost;
+                                }
+                                
+                                if (canBuy) {
+                                    if (type < 3) {
+                                        buyBasicCard(type, level);
+                                    } else {
+                                        buyBasicCard(3, 1);
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 檢查商店按鈕點擊
+        if (battleUIStage.shopButton && mouse_in_button(battleUIStage.shopButton)) {
+            battleUIStage.showShopPopup = true;
+            return;
         }
         
         // Handle skill area clicks
@@ -1158,13 +1392,6 @@ void handle_battle_events_stage(SDL_Event* event) {
             return;
         }
         
-        if(battleUIStage.shopButton && mouse_in_button(battleUIStage.shopButton)) {
-            printf("Shop button clicked\n");
-            battleUIStage.showShopPopup = true;
-            return;
-        }
-        
-        // Handle deck/graveyard button clicks (移除對手手牌按鈕的檢查)
         if(battleUIStage.opponentDeckButton && mouse_in_button(battleUIStage.opponentDeckButton)) {
             printf("Opponent deck button clicked (no action)\n");
             // 不執行任何動作，只是打印訊息
@@ -1222,7 +1449,7 @@ void handle_battle_events_stage(SDL_Event* event) {
     }
     
     if(event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_ESCAPE) {
-        // Close all popups on ESC (移除對手牌庫彈出視窗)
+        // Close all popups on ESC
         battleUIStage.showShopPopup = false;
         battleUIStage.showOpponentGravePopup = false;
         battleUIStage.showMyDeckPopup = false;
@@ -1235,6 +1462,7 @@ void handle_battle_events_stage(SDL_Event* event) {
         battleUIStage.showMyAttackSkillPopup = false;
         battleUIStage.showMyDefenseSkillPopup = false;
         battleUIStage.showMyMoveSkillPopup = false;
+        battleUIStage.showCardDetailPopup = false;
         
         battleUIStage.focusMode = false;
     }
@@ -1440,7 +1668,7 @@ void draw_battle_ui_stage() {
     SDL_SetRenderDrawColor(uiBase.renderer, 30, 30, 30, 255);
     SDL_RenderClear(uiBase.renderer);
     
-    // Update hover states (移除對手手牌懸停狀態)
+    // Update hover states
     battleUIStage.hoveringShop = (battleUIStage.shopButton && mouse_in_button(battleUIStage.shopButton));
     battleUIStage.hoveringOpponentDeck = (battleUIStage.opponentDeckButton && mouse_in_button(battleUIStage.opponentDeckButton));
     battleUIStage.hoveringOpponentGrave = (battleUIStage.opponentGraveButton && mouse_in_button(battleUIStage.opponentGraveButton));
@@ -1455,10 +1683,6 @@ void draw_battle_ui_stage() {
     int32_t mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
     
-    if (battleUIStage.hoveringShop && !battleUIStage.showShopPopup) {
-        draw_hover_preview("基礎牌商店", NULL, mouseX, mouseY);
-    }
-    
     int32_t opponent = (game.now_turn_player_id + 1) % 2;
     
     // 對手牌庫懸停預覽
@@ -1466,6 +1690,7 @@ void draw_battle_ui_stage() {
         draw_hover_preview("對手牌庫", NULL, mouseX, mouseY);
     }
     
+    // 棄牌堆懸停預覽
     if (battleUIStage.hoveringOpponentGrave && !battleUIStage.showOpponentGravePopup) {
         draw_hover_preview("對手棄牌區", &game.players[opponent].graveyard, mouseX, mouseY);
     }
@@ -1474,36 +1699,23 @@ void draw_battle_ui_stage() {
         draw_hover_preview("我的棄牌區", &game.players[game.now_turn_player_id].graveyard, mouseX, mouseY);
     }
     
-    // Draw skill hover previews
-    if (battleUIStage.hoveringOpponentSpecial && !battleUIStage.showOpponentSpecialPopup) {
-        draw_hover_preview("對手必殺牌", &game.players[opponent].specialDeck, mouseX, mouseY);
+    // 技能牌區域懸停預覽
+    if (battleUIStage.hoveringMyAttackSkill) {
+        draw_hover_preview("攻擊技能商店", &game.players[game.now_turn_player_id].attackSkill, mouseX, mouseY);
     }
-    if (battleUIStage.hoveringOpponentAttackSkill && !battleUIStage.showOpponentAttackSkillPopup) {
-        draw_hover_preview("對手攻擊技能", &game.players[opponent].attackSkill, mouseX, mouseY);
+    if (battleUIStage.hoveringMyDefenseSkill) {
+        draw_hover_preview("防禦技能商店", &game.players[game.now_turn_player_id].defenseSkill, mouseX, mouseY);
     }
-    if (battleUIStage.hoveringOpponentDefenseSkill && !battleUIStage.showOpponentDefenseSkillPopup) {
-        draw_hover_preview("對手防禦技能", &game.players[opponent].defenseSkill, mouseX, mouseY);
-    }
-    if (battleUIStage.hoveringOpponentMoveSkill && !battleUIStage.showOpponentMoveSkillPopup) {
-        draw_hover_preview("對手移動技能", &game.players[opponent].moveSkill, mouseX, mouseY);
-    }
-    if (battleUIStage.hoveringMySpecial && !battleUIStage.showMySpecialPopup) {
-        draw_hover_preview("我的必殺牌", &game.players[game.now_turn_player_id].specialDeck, mouseX, mouseY);
-    }
-    if (battleUIStage.hoveringMyAttackSkill && !battleUIStage.showMyAttackSkillPopup) {
-        draw_hover_preview("我的攻擊技能", &game.players[game.now_turn_player_id].attackSkill, mouseX, mouseY);
-    }
-    if (battleUIStage.hoveringMyDefenseSkill && !battleUIStage.showMyDefenseSkillPopup) {
-        draw_hover_preview("我的防禦技能", &game.players[game.now_turn_player_id].defenseSkill, mouseX, mouseY);
-    }
-    if (battleUIStage.hoveringMyMoveSkill && !battleUIStage.showMyMoveSkillPopup) {
-        draw_hover_preview("我的移動技能", &game.players[game.now_turn_player_id].moveSkill, mouseX, mouseY);
+    if (battleUIStage.hoveringMyMoveSkill) {
+        draw_hover_preview("移動技能商店", &game.players[game.now_turn_player_id].moveSkill, mouseX, mouseY);
     }
     
-    // Draw popups (on top of everything)
+    // Draw popups
     if (battleUIStage.showShopPopup) {
         draw_shop_popup();
     }
+    
+    // 棄牌堆彈窗
     if (battleUIStage.showOpponentGravePopup) {
         draw_deck_popup("對手棄牌區", &game.players[opponent].graveyard, NULL);
     }
@@ -1511,30 +1723,15 @@ void draw_battle_ui_stage() {
         draw_deck_popup("我的棄牌區", &game.players[game.now_turn_player_id].graveyard, NULL);
     }
     
-    // Draw skill popups
-    if (battleUIStage.showOpponentSpecialPopup) {
-        draw_deck_popup("對手必殺牌", &game.players[opponent].specialDeck, NULL);
-    }
-    if (battleUIStage.showOpponentAttackSkillPopup) {
-        draw_deck_popup("對手攻擊技能", &game.players[opponent].attackSkill, NULL);
-    }
-    if (battleUIStage.showOpponentDefenseSkillPopup) {
-        draw_deck_popup("對手防禦技能", &game.players[opponent].defenseSkill, NULL);
-    }
-    if (battleUIStage.showOpponentMoveSkillPopup) {
-        draw_deck_popup("對手移動技能", &game.players[opponent].moveSkill, NULL);
-    }
-    if (battleUIStage.showMySpecialPopup) {
-        draw_deck_popup("我的必殺牌", &game.players[game.now_turn_player_id].specialDeck, NULL);
-    }
+    // 技能牌商店彈窗
     if (battleUIStage.showMyAttackSkillPopup) {
-        draw_deck_popup("我的攻擊技能", &game.players[game.now_turn_player_id].attackSkill, NULL);
+        draw_skill_shop_popup("攻擊技能商店", 1);
     }
     if (battleUIStage.showMyDefenseSkillPopup) {
-        draw_deck_popup("我的防禦技能", &game.players[game.now_turn_player_id].defenseSkill, NULL);
+        draw_skill_shop_popup("防禦技能商店", 2);
     }
     if (battleUIStage.showMyMoveSkillPopup) {
-        draw_deck_popup("我的移動技能", &game.players[game.now_turn_player_id].moveSkill, NULL);
+        draw_skill_shop_popup("移動技能商店", 3);
     }
     
     // Draw focus mode overlay if active
@@ -1657,18 +1854,41 @@ void draw_shop_popup() {
         
         // Draw cards for each level
         for (int32_t level = 1; level <= maxLevel; level++) {
-            int32_t cardY = startY + 40 + (level - 1) * 70; // Reduced spacing to fit window
+            int32_t cardY = startY + 40 + (level - 1) * 70;
             
             // Card background
-            SDL_Rect cardRect = {colX + 10, cardY, colWidth - 20, 60}; // Reduced height
-            SDL_SetRenderDrawColor(uiBase.renderer, 80, 80, 80, 255);
+            SDL_Rect cardRect = {colX + 10, cardY, colWidth - 20, 60};
+            
+            // 檢查是否可以購買
+            bool canBuy = false;
+            if (type < 3) {
+                if (game.basicBuyDeck[type][level-1].SIZE == 0) {
+                    canBuy = false;
+                }
+                else {
+                    canBuy = game.players[game.now_turn_player_id].energy >= getCardData((type * 3 + level))->cost;
+                }
+            } else {
+                if (game.basicBuyDeck[3][0].SIZE == 0) {
+                    canBuy = false;
+                }
+                else {
+                    canBuy = game.players[game.now_turn_player_id].energy >= getCardData(10)->cost;
+                }
+            }
+            
+            // 根據是否可以購買設置不同的背景顏色
+            if (canBuy) {
+                SDL_SetRenderDrawColor(uiBase.renderer, 80, 80, 80, 255);
+            } else {
+                SDL_SetRenderDrawColor(uiBase.renderer, 50, 50, 50, 255);
+            }
             SDL_RenderFillRect(uiBase.renderer, &cardRect);
             SDL_SetRenderDrawColor(uiBase.renderer, 200, 200, 200, 255);
             SDL_RenderDrawRect(uiBase.renderer, &cardRect);
             
             // Card info
-            int32_t cardId = (type == 3) ? 10 : (type * 3 + level); // 通用牌ID=10
-            
+            int32_t cardId = (type == 3) ? 10 : (type * 3 + level);
             const Card* cardData = getCardData(cardId);
             if (cardData) {
                 draw_text_center(cardData->name, colX + colWidth/2, cardY + 10, white, 12);
@@ -1677,7 +1897,7 @@ void draw_shop_popup() {
                 snprintf(costText, 20, "費用: %d", cardData->cost);
                 draw_text_center(costText, colX + colWidth/2, cardY + 25, lightblue1, 11);
                 
-                // Show remaining count - 使用正確的vector size
+                // Show remaining count
                 char countText[30];
                 if (type < 3) {
                     snprintf(countText, 30, "剩餘: %d張", game.basicBuyDeck[type][level-1].SIZE);
@@ -1688,7 +1908,7 @@ void draw_shop_popup() {
             }
         }
         
-        // Show total available count for this type - moved position
+        // Show total available count for this type
         if (type < 3) {
             char availText[30];
             int32_t totalCount = game.basicBuyDeck[type][0].SIZE + 
@@ -1797,4 +2017,114 @@ static const char* getCardTypeName(CardType type) {
         case TYPE_METAMORPH: return "蛻變牌";
         default: return "基本牌";
     }
+}
+
+// 新增：技能牌商店彈窗函數
+void draw_skill_shop_popup(const char* title, int32_t skillType) {
+    // 半透明背景
+    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+    SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
+    SDL_RenderFillRect(uiBase.renderer, &overlay);
+    
+    // 主彈窗
+    SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 350, SCREEN_HEIGHT/2 - 250, 700, 500};
+    SDL_SetRenderDrawColor(uiBase.renderer, 64, 64, 64, 255);
+    SDL_RenderFillRect(uiBase.renderer, &dialogRect);
+    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+    SDL_RenderDrawRect(uiBase.renderer, &dialogRect);
+    
+    // 標題
+    draw_text_center(title, SCREEN_WIDTH/2, dialogRect.y + 30, white, 32);
+    
+    // 顯示技能牌
+    int32_t startY = dialogRect.y + 80;
+    int32_t cardHeight = 100;
+    int32_t cardWidth = 200;
+    int32_t cardsPerRow = 3;
+    int32_t padding = 20;
+    
+    // 根據技能類型獲取對應的vector
+    vector* skillCards;
+    switch(skillType) {
+        case 1: // 攻擊技能
+            skillCards = &game.players[game.now_turn_player_id].attackSkill;
+            break;
+        case 2: // 防禦技能
+            skillCards = &game.players[game.now_turn_player_id].defenseSkill;
+            break;
+        case 3: // 移動技能
+            skillCards = &game.players[game.now_turn_player_id].moveSkill;
+            break;
+        default:
+            return;
+    }
+    
+    // 顯示所有技能牌
+    int32_t validCardCount = 0;  // 用于计算有效的卡片数量
+    for (int32_t i = 0; i < skillCards->SIZE; i++) {
+        const Card* cardData = getCardData(skillCards->array[i]);
+        if (cardData) {
+            int32_t row = validCardCount / cardsPerRow;
+            int32_t col = validCardCount % cardsPerRow;
+            
+            int32_t cardX = dialogRect.x + padding + col * (cardWidth + padding);
+            int32_t cardY = startY + row * (cardHeight + padding);
+            
+            // 卡牌背景（整個卡片作為按鈕）
+            SDL_Rect cardRect = {cardX, cardY, cardWidth, cardHeight};
+            bool isFirstCard = validCardCount == 0;
+            bool canBuy = isFirstCard && game.players[game.now_turn_player_id].energy >= cardData->cost;
+            
+            // 根據是否可以購買設置不同的背景顏色
+            if (canBuy) {
+                SDL_SetRenderDrawColor(uiBase.renderer, 80, 80, 80, 255);
+            } else if (isFirstCard) {
+                SDL_SetRenderDrawColor(uiBase.renderer, 60, 60, 60, 255);
+            } else {
+                SDL_SetRenderDrawColor(uiBase.renderer, 40, 40, 40, 255);
+            }
+            SDL_RenderFillRect(uiBase.renderer, &cardRect);
+            SDL_SetRenderDrawColor(uiBase.renderer, 200, 200, 200, 255);
+            SDL_RenderDrawRect(uiBase.renderer, &cardRect);
+            
+            // 卡牌信息
+            SDL_Color textColor;
+            if (canBuy) {
+                textColor = white;
+            } else if (isFirstCard) {
+                textColor = (SDL_Color){180, 180, 180, 255};
+            } else {
+                textColor = (SDL_Color){120, 120, 120, 255};
+            }
+            draw_text(cardData->name, cardX + 10, cardY + 10, textColor, 16);
+            char costText[20];
+            snprintf(costText, 20, "費用: %d", cardData->cost);
+            draw_text(costText, cardX + 10, cardY + 30, canBuy ? lightblue1 : (SDL_Color){100, 100, 100, 255}, 14);
+            draw_text(cardData->description, cardX + 10, cardY + 50, textColor, 12);
+            
+            // 購買按鈕
+            SDL_Rect buyButtonRect = {cardX + 10, cardY + cardHeight - 30, 80, 20};
+            SDL_Color buttonColor;
+            if (canBuy) {
+                buttonColor = (SDL_Color){0, 200, 0, 255};
+            } else if (isFirstCard) {
+                buttonColor = (SDL_Color){100, 100, 100, 255};
+            } else {
+                buttonColor = (SDL_Color){60, 60, 60, 255};
+            }
+            SDL_SetRenderDrawColor(uiBase.renderer, buttonColor.r, buttonColor.g, buttonColor.b, buttonColor.a);
+            SDL_RenderFillRect(uiBase.renderer, &buyButtonRect);
+            // 根據價格顯示不同的按鈕文字
+            const char* buttonText = cardData->cost == 0 ? "未解鎖" : "購買";
+            draw_text_center(buttonText, cardX + 50, cardY + cardHeight - 20, white, 12);
+            
+            validCardCount++;
+        }
+    }
+    
+    // 關閉按鈕
+    SDL_Rect closeButtonRect = {dialogRect.x + dialogRect.w - 40, dialogRect.y + 10, 30, 30};
+    SDL_SetRenderDrawColor(uiBase.renderer, 200, 0, 0, 255);
+    SDL_RenderFillRect(uiBase.renderer, &closeButtonRect);
+    draw_text_center("X", dialogRect.x + dialogRect.w - 25, dialogRect.y + 25, white, 16);
 }

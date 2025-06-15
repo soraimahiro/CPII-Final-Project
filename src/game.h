@@ -40,5 +40,11 @@ void move(sPlayer* player, int total_move);
 void draw_card(sPlayer* player, int count);
 int activation_phase(int32_t handIndex);
 
+// 基礎牌商店相關函式
+void buyBasicCard(int32_t type, int32_t level);
+
+// 將卡片加入牌堆
+void pushbackVector(vector* v, int32_t value);
+
 #endif
 
