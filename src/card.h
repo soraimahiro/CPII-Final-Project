@@ -35,6 +35,7 @@ typedef struct {
 
 const Card* getCardData(CardID id);
 void shuffle(vector* v);
+int move_card(vector *dest, vector *src);
 
 // character
 typedef struct {
