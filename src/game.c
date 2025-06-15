@@ -815,7 +815,7 @@ void game_play_logic() {
                 
             case 6: // Use Ultimate
                 printf("Use Ultimate: Choose an ultimate card to use\n");
-                handle_ultimate(current_player, opponent);
+                // handle_ultimate(current_player, opponent);
                 break;
                 
             case 7: // Buy Card
