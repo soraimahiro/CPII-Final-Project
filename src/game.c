@@ -922,7 +922,7 @@ void game_play_logic() {
 
     // 清理階段
     printf("\n=== Refresh Phase ===\n");
-    refresh_phase(current_player); 
+    refresh_phase(); 
 
     // 行動階段
     bool action_phase_end = false;
@@ -1120,7 +1120,33 @@ void game_play_logic() {
     
     // 結束階段
     printf("\n=== End Phase ===\n");
-    ending_phase(current_player);
+    ending_phase();
     first_render = true;
     waiting_for_input = true;
+}
+
+int activation_phase(int32_t cardID){
+    sPlayer* current_player = &game.players[game.now_turn_player_id];
+    sPlayer* opponent = &game.players[(game.now_turn_player_id + 1) % 2];
+
+    if(cardID >= CARD_BASIC_ATK1 && cardID <= CARD_BASIC_ATK3){
+        handle_attack(current_player, opponent, cardID);
+    }
+    else if(cardID >= CARD_BASIC_DEF1 && cardID <= CARD_BASIC_DEF3){
+        handle_defense(current_player, cardID);
+    }
+    else if(cardID >= CARD_BASIC_MOVE1 && cardID <= CARD_BASIC_MOVE3){
+        handle_move(current_player, cardID);
+    }
+    else if(cardID == CARD_BASIC_COMMON){
+
+    }
+    
+    return 0; // 加入返回值
+}
+
+int next_phase(){
+    ending_phase();
+    beginning_phase();
+    refresh_phase();
 }
