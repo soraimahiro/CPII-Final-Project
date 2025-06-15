@@ -1215,6 +1215,8 @@ void handle_battle_events_stage(SDL_Event* event) {
             if(mouse_in_button(battleUIStage.useHandButton)){
                 DEBUG_PRINT("use hand card\n");
                 activation_phase(battleUIStage.selectedCardIndex);
+                SDL_Rect handRect = {LEFT_COLUMN_WIDTH + 10, 600, MIDDLE_COLUMN_WIDTH - 20, 80};
+                init_card_area_buttons(&battleUIStage.handAreaButtons, "手牌", handRect);
             }
             SDL_Rect dialogRect = {SCREEN_WIDTH/2 - 200, SCREEN_HEIGHT/2 - 200, 400, 400};
             if (mouseX < dialogRect.x || mouseX > dialogRect.x + dialogRect.w ||
