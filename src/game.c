@@ -429,7 +429,7 @@ void print_hand_cards(sPlayer* player) {
 }
 
 void attack(sPlayer* defender, int total_damage) {
-    sPlayer* attacker = game.players[game.now_turn_player_id];
+    sPlayer* attacker = &game.players[game.now_turn_player_id];
     if (attacker->character == CHARACTER_SLEEPINGBEAUTY) {
         if (attacker->sleepingBeauty.atkRiseTime) {
             total_damage += attacker->sleepingBeauty.atkRise;
