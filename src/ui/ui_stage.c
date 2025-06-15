@@ -74,14 +74,14 @@ static void init_card_area_buttons(sCardAreaButtons* areaButtons, const char* ar
             if(cardData) {
                 // 計算按鈕位置
                 int32_t buttonX = areaRect.x + 10 + currentCol * 150;
-                int32_t buttonY = areaRect.y + 25 + currentRow * lineHeight;
+                int32_t buttonY = areaRect.y + 30 + currentRow * lineHeight;
                 
                 // 檢查是否需要換行
                 if(buttonX + 140 > areaRect.x + areaRect.w) {
                     currentRow++;
                     currentCol = 0;
                     buttonX = areaRect.x + 10;
-                    buttonY = areaRect.y + 25 + currentRow * lineHeight;
+                    buttonY = areaRect.y + 45 + currentRow * lineHeight;
                 }
                 
                 // 創建按鈕
@@ -89,9 +89,9 @@ static void init_card_area_buttons(sCardAreaButtons* areaButtons, const char* ar
                     buttonX,
                     buttonY,
                     140,  // 寬度
-                    15    // 高度
+                    25    // 高度
                 };
-                areaButtons->buttons[i + 1] = create_button(cardButtonRect, cardData->name, textColors, bgColors, borderColors, 12, 1);
+                areaButtons->buttons[i + 1] = create_button(cardButtonRect, cardData->name, textColors, bgColors, borderColors, 15, 1);
                 
                 currentCol++;
             }
@@ -424,7 +424,7 @@ void draw_middle_column_stage() {
     SDL_Rect handRect = {startX + 10, handY, width - 20, 80};
     
     draw_card_area_stage("手牌", &game.players[current_player].hand, 
-                        startX + 10, handY, width - 20, 80, true); // Same height as opponent
+                        startX + 10, handY, width - 20, 100, true); // Same height as opponent
     
     // 初始化手牌區域按鈕和反轉牌區域按鈕（如果還沒初始化）
     if (battleUIStage.handAreaButtons.buttonCount == 0) {
@@ -765,7 +765,7 @@ void draw_battle_grid_stage() {
         char posText[5];
         snprintf(posText, 5, "%d", i + 1);
         draw_text_center(posText, gridX + (LEFT_COLUMN_WIDTH - 40)/2, 
-                        gridY + i * cellSize + cellSize/2, white, 16);
+                        gridY + i * cellSize + cellSize/2, white, 25);
     }
 }
 
