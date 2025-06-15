@@ -42,9 +42,11 @@ typedef struct {
     sButton *myMetamorphButton;
     
     sButton *cardButtons[32];   // Hand/skill card buttons
+    sButton *metamorphosisCardButtons[32];   // Metamorphosis card buttons
     
     // 卡牌區域按鈕管理
     sCardAreaButtons handAreaButtons;      // 手牌區域按鈕
+    sCardAreaButtons metamorphosisAreaButtons;      // 反轉牌區域按鈕
     sCardAreaButtons opponentHandAreaButtons;  // 對手手牌區域按鈕
     sCardAreaButtons skillAreaButtons;     // 技能區域按鈕
     

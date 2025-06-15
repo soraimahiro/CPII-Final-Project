@@ -97,6 +97,71 @@ static void init_card_area_buttons(sCardAreaButtons* areaButtons, const char* ar
             }
         }
     }
+    else if (strcmp(areaName, "反轉牌") == 0) {
+        // 清理旧的按钮
+        if (areaButtons->buttons) {
+            for (int32_t i = 0; i < areaButtons->buttonCount; i++) {
+                if (areaButtons->buttons[i]) {
+                    free_button(areaButtons->buttons[i]);
+                }
+            }
+            free(areaButtons->buttons);
+        }
+        
+        // 为每张反轉创建一个详细信息按钮
+        int32_t current_player = game.now_turn_player_id;
+        areaButtons->buttonCount = game.players[current_player].metamorphosis.SIZE + 1; // +1 为整理按钮
+        areaButtons->buttons = calloc(areaButtons->buttonCount, sizeof(sButton*));
+        
+        SDL_Color textColors[] = {white, white, black, black};
+        SDL_Color bgColors[] = {gray1, gray2, lightblue1, lightblue2};
+        SDL_Color borderColors[] = {white, white, white, white};
+        
+        // 创建整理按钮
+        SDL_Rect sortButtonRect = {
+            areaRect.x + areaRect.w - 80,  // 距离右边80像素
+            areaRect.y + 5,                // 距离上边5像素
+            70,                            // 宽度
+            25                             // 高度
+        };
+        areaButtons->buttons[0] = create_button(sortButtonRect, "整理", textColors, bgColors, borderColors, 14, 2);
+        
+        // 為每張反轉牌創建按鈕
+        int32_t maxCardsPerRow = areaRect.w / 150; // 每行最多顯示的卡牌數
+        if(maxCardsPerRow < 1) maxCardsPerRow = 1;
+        
+        int32_t lineHeight = 15;
+        int32_t currentRow = 0;
+        int32_t currentCol = 0;
+        
+        for(int32_t i = 0; i < game.players[current_player].metamorphosis.SIZE; i++) {
+            const Card* cardData = getCardData(game.players[current_player].metamorphosis.array[i]);
+            if(cardData) {
+                // 計算按鈕位置
+                int32_t buttonX = areaRect.x + 10 + currentCol * 150;
+                int32_t buttonY = areaRect.y + 25 + currentRow * lineHeight;
+                
+                // 檢查是否需要換行
+                if(buttonX + 140 > areaRect.x + areaRect.w) {
+                    currentRow++;
+                    currentCol = 0;
+                    buttonX = areaRect.x + 10;
+                    buttonY = areaRect.y + 25 + currentRow * lineHeight;
+                }
+                
+                // 創建按鈕
+                SDL_Rect cardButtonRect = {
+                    buttonX,
+                    buttonY,
+                    140,  // 寬度
+                    15    // 高度
+                };
+                areaButtons->buttons[i + 1] = create_button(cardButtonRect, cardData->name, textColors, bgColors, borderColors, 12, 1);
+                
+                currentCol++;
+            }
+        }
+    }
 }
 
 // 清理卡牌區域按鈕
@@ -139,6 +204,13 @@ static bool handle_card_area_button_events(sCardAreaButtons* areaButtons, SDL_Ev
         for (int32_t i = 0; i < areaButtons->buttonCount; i++) {
             if (areaButtons->buttons[i] && mouse_in_button(areaButtons->buttons[i])) {
                 printf("Card area button clicked in %s area: button %d\n", areaButtons->areaName, i);
+                
+                // 如果是卡牌按鈕（i > 0），顯示詳細信息
+                if (i > 0) {
+                    battleUIStage.showCardDetailPopup = true;
+                    battleUIStage.selectedCardIndex = i - 1;
+                }
+                
                 return true;  // 事件已處理
             }
         }
@@ -237,7 +309,7 @@ void draw_middle_column_stage() {
                         startX + 10 + skillCardWidth * 3, opponentAreasY, skillCardWidth, 80, true);
     
     // Opponent used cards area (right side)
-    draw_card_area_stage("反轉牌", &game.players[opponent].usecards, 
+    draw_card_area_stage("反轉牌", &game.players[opponent].metamorphosis, 
                         startX + largeAreaWidth + 30, opponentAreasY, largeAreaWidth, 80, true);
     
     // Main battle area (center of screen) - enlarged
@@ -290,22 +362,28 @@ void draw_middle_column_stage() {
                         startX + 10 + skillCardWidth * 3, myAreasY, skillCardWidth, 80, true);
     
     // My used cards area (right side)
-    draw_card_area_stage("反轉牌", &game.players[current_player].usecards, 
-                        startX + largeAreaWidth + 30, myAreasY, largeAreaWidth, 80, false);
+    SDL_Rect metamorphosisRect = {startX + largeAreaWidth + 30, myAreasY, largeAreaWidth, 80};
+    draw_card_area_stage("反轉牌", &game.players[current_player].metamorphosis, 
+                        metamorphosisRect.x, metamorphosisRect.y, metamorphosisRect.w, metamorphosisRect.h, true);
     
     // My hand cards - symmetric to opponent hand cards
     int32_t handY = 600; // Position symmetric to opponent hand
     SDL_Rect handRect = {startX + 10, handY, width - 20, 80};
+    
     draw_card_area_stage("手牌", &game.players[current_player].hand, 
                         startX + 10, handY, width - 20, 80, true); // Same height as opponent
     
-    // 初始化手牌區域按鈕（如果還沒初始化）
+    // 初始化手牌區域按鈕和反轉牌區域按鈕（如果還沒初始化）
     if (battleUIStage.handAreaButtons.buttonCount == 0) {
         init_card_area_buttons(&battleUIStage.handAreaButtons, "手牌", handRect);
     }
+    if (battleUIStage.metamorphosisAreaButtons.buttonCount == 0) {
+        init_card_area_buttons(&battleUIStage.metamorphosisAreaButtons, "反轉牌", metamorphosisRect);
+    }
     
-    // 繪製手牌區域按鈕
+    // 繪製手牌區域按鈕和反轉牌區域按鈕
     draw_card_area_buttons(&battleUIStage.handAreaButtons);
+    draw_card_area_buttons(&battleUIStage.metamorphosisAreaButtons);
 }
 
 void init_battle_ui_stage() {
@@ -582,6 +660,7 @@ void cleanup_battle_ui_stage() {
     cleanup_card_area_buttons(&battleUIStage.handAreaButtons);
     cleanup_card_area_buttons(&battleUIStage.opponentHandAreaButtons);
     cleanup_card_area_buttons(&battleUIStage.skillAreaButtons);
+    cleanup_card_area_buttons(&battleUIStage.metamorphosisAreaButtons);
 }
 
 void draw_battle_grid_stage() {
@@ -723,6 +802,8 @@ void draw_card_area_stage(const char* title, vector* cards, int32_t x, int32_t y
     
     // 檢查是否為我方手牌（位於下方且標題為"手牌"）
     bool isMyHandCards = (strcmp(title, "手牌") == 0) && (y > SCREEN_HEIGHT/2);
+    // 檢查是否為我方反轉牌（位於下方且標題為"反轉牌"）
+    bool isMyMetamorphosisCards = (strcmp(title, "反轉牌") == 0) && (y > SCREEN_HEIGHT/2);
     
     if(isMyHandCards) {
         // 获取鼠标位置
@@ -793,6 +874,60 @@ void draw_card_area_stage(const char* title, vector* cards, int32_t x, int32_t y
                 draw_text(cardText, cardX, cardDisplayY, red, 12);
                 currentCol++;
             }
+        }
+    }
+    else if(isMyMetamorphosisCards) {
+        // 獲取滑鼠位置
+        int32_t mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        
+        // 我方反轉牌顯示全部卡牌
+        int32_t maxCardsPerRow = width / 150; // 每行最多顯示的卡牌數（假設每張卡需要150px寬度）
+        if(maxCardsPerRow < 1) maxCardsPerRow = 1;
+        
+        int32_t lineHeight = 15;
+        int32_t currentRow = 0;
+        int32_t currentCol = 0;
+        
+        for(int32_t i = 0; i < cards->SIZE; i++) {
+            const Card* cardData = getCardData(cards->array[i]);
+            // 計算卡牌顯示位置
+            int32_t cardX = x + 10 + currentCol * 150;
+            int32_t cardDisplayY = cardY + currentRow * lineHeight;
+            
+            // 檢查是否需要換行
+            if(cardX + 140 > x + width) {
+                currentRow++;
+                currentCol = 0;
+                cardX = x + 10;
+                cardDisplayY = cardY + currentRow * lineHeight;
+            }
+            
+            // 檢查是否超出區域高度
+            if(cardDisplayY + lineHeight > y + height - 5) {
+                // 顯示省略號並停止
+                draw_text("...", x + 10, cardDisplayY, white, 12);
+                break;
+            }
+            
+            if(cardData) {
+                // 檢查滑鼠是否懸停在卡牌上
+                bool isHovering = (mouseX >= cardX && mouseX <= cardX + 140 &&
+                                 mouseY >= cardDisplayY && mouseY <= cardDisplayY + 15);
+                
+                // 如果懸停，顯示預覽
+                if(isHovering) {
+                    draw_hover_preview(cardData->name, cards, mouseX, mouseY);
+                }
+                
+                // 顯示卡牌名稱
+                draw_text(cardData->name, cardX, cardDisplayY, white, 12);
+            } else {
+                // 如果卡牌數據缺失，顯示未知卡牌
+                draw_text("未知卡牌", cardX, cardDisplayY, red, 12);
+            }
+            
+            currentCol++;
         }
     }
     else {
@@ -898,16 +1033,11 @@ void handle_battle_events_stage(SDL_Event* event) {
         
         // 處理卡牌區域按鈕事件（優先處理）
         if (handle_card_area_button_events(&battleUIStage.handAreaButtons, event)) {
-            // 檢查是否點擊了手牌詳細信息按鈕
-            for (int32_t i = 1; i < battleUIStage.handAreaButtons.buttonCount; i++) {
-                if (battleUIStage.handAreaButtons.buttons[i] && 
-                    mouse_in_button(battleUIStage.handAreaButtons.buttons[i])) {
-                    // 顯示對應卡片的詳細信息
-                    battleUIStage.showCardDetailPopup = true;
-                    battleUIStage.selectedCardIndex = i - 1;
-                    return;
-                }
-            }
+            return;  // 事件已被處理，不繼續處理其他事件
+        }
+        
+        // 處理反轉牌區域按鈕事件
+        if (handle_card_area_button_events(&battleUIStage.metamorphosisAreaButtons, event)) {
             return;  // 事件已被處理，不繼續處理其他事件
         }
         
@@ -1111,34 +1241,39 @@ void handle_battle_events_stage(SDL_Event* event) {
             return;
         }
         
-        // 檢查是否點擊了手牌
-        int32_t current_player = game.now_turn_player_id;
-        int32_t maxCardsPerRow = battleUIStage.handAreaButtons.areaRect.w / 150;
-        if(maxCardsPerRow < 1) maxCardsPerRow = 1;
-        
-        int32_t lineHeight = 15;
-        int32_t currentRow = 0;
-        int32_t currentCol = 0;
-        
-        for(int32_t i = 0; i < game.players[current_player].hand.SIZE; i++) {
-            int32_t cardX = battleUIStage.handAreaButtons.areaRect.x + 10 + currentCol * 150;
-            int32_t cardY = battleUIStage.handAreaButtons.areaRect.y + 25 + currentRow * lineHeight;
-            
-            if(cardX + 140 > battleUIStage.handAreaButtons.areaRect.x + battleUIStage.handAreaButtons.areaRect.w) {
-                currentRow++;
-                currentCol = 0;
-                cardX = battleUIStage.handAreaButtons.areaRect.x + 10;
-                cardY = battleUIStage.handAreaButtons.areaRect.y + 25 + currentRow * lineHeight;
-            }
-            
-            if(mouseX >= cardX && mouseX <= cardX + 140 &&
-               mouseY >= cardY && mouseY <= cardY + 15) {
-                // 顯示卡片詳細信息
-                draw_deck_popup("手牌", &game.players[current_player].hand, NULL);
+        // 檢查是否點擊了卡牌按鈕
+        for (int32_t i = 1; i < battleUIStage.handAreaButtons.buttonCount; i++) {
+            if (battleUIStage.handAreaButtons.buttons[i] && 
+                mouse_in_button(battleUIStage.handAreaButtons.buttons[i])) {
+                // 顯示卡牌詳細信息
+                battleUIStage.showCardDetailPopup = true;
+                battleUIStage.selectedCardIndex = i - 1;
                 return;
             }
-            
-            currentCol++;
+        }
+    }
+    
+    // 處理反轉牌區域按鈕事件
+    if (battleUIStage.metamorphosisAreaButtons.enabled && event->type == SDL_MOUSEBUTTONDOWN) {
+        int32_t mouseX = event->button.x;
+        int32_t mouseY = event->button.y;
+        
+        // 檢查是否點擊了整理按鈕
+        if (battleUIStage.metamorphosisAreaButtons.buttons[0] && 
+            mouse_in_button(battleUIStage.metamorphosisAreaButtons.buttons[0])) {
+            // 處理整理按鈕點擊
+            return;
+        }
+        
+        // 檢查是否點擊了卡牌按鈕
+        for (int32_t i = 1; i < battleUIStage.metamorphosisAreaButtons.buttonCount; i++) {
+            if (battleUIStage.metamorphosisAreaButtons.buttons[i] && 
+                mouse_in_button(battleUIStage.metamorphosisAreaButtons.buttons[i])) {
+                // 顯示卡牌詳細信息
+                battleUIStage.showCardDetailPopup = true;
+                battleUIStage.selectedCardIndex = i - 1;
+                return;
+            }
         }
     }
 }
@@ -1436,6 +1571,34 @@ void draw_battle_ui_stage() {
             const Card* cardData = getCardData(game.players[game.now_turn_player_id].hand.array[i]);
             if(cardData) {
                 draw_hover_preview(cardData->name, &game.players[game.now_turn_player_id].hand, mouseX, mouseY);
+            }
+            break;
+        }
+        currentCol++;
+    }
+
+    // --- 新增：反轉牌懸停預覽 ---
+    int32_t metamorphX = battleUIStage.metamorphosisAreaButtons.areaRect.x;
+    int32_t metamorphY = battleUIStage.metamorphosisAreaButtons.areaRect.y;
+    int32_t metamorphW = battleUIStage.metamorphosisAreaButtons.areaRect.w;
+    int32_t metamorphH = battleUIStage.metamorphosisAreaButtons.areaRect.h;
+    maxCardsPerRow = metamorphW / 150;
+    if(maxCardsPerRow < 1) maxCardsPerRow = 1;
+    currentRow = 0;
+    currentCol = 0;
+    for(int32_t i = 0; i < game.players[game.now_turn_player_id].metamorphosis.SIZE; i++) {
+        int32_t cardX = metamorphX + 10 + currentCol * 150;
+        int32_t cardY = metamorphY + 25 + currentRow * lineHeight;
+        if(cardX + 140 > metamorphX + metamorphW) {
+            currentRow++;
+            currentCol = 0;
+            cardX = metamorphX + 10;
+            cardY = metamorphY + 25 + currentRow * lineHeight;
+        }
+        if(mouseX >= cardX && mouseX <= cardX + 140 && mouseY >= cardY && mouseY <= cardY + 15) {
+            const Card* cardData = getCardData(game.players[game.now_turn_player_id].metamorphosis.array[i]);
+            if(cardData) {
+                draw_hover_preview(cardData->name, &game.players[game.now_turn_player_id].metamorphosis, mouseX, mouseY);
             }
             break;
         }
