@@ -1140,3 +1140,27 @@ void init_scheherazade(sPlayer* p) {
     p->scheherazade.destiny_TOKEN_type = initVector();
     p->scheherazade.selectToken = 0;
 }
+
+void buyBasicCard(int32_t type, int32_t level) {
+    // 獲取卡牌ID
+    int32_t cardId = (type == 3) ? 10 : (type * 3 + level);
+    const Card* cardData = getCardData(cardId);
+    
+    if (!cardData) return;
+    
+    // 從基礎牌商店移除卡牌
+    int32_t buyCardId;
+    if (type < 3) {
+        buyCardId = game.basicBuyDeck[type][level-1].array[0];
+        eraseVector(&game.basicBuyDeck[type][level-1], 0);
+    } else {
+        buyCardId = game.basicBuyDeck[3][0].array[0];
+        eraseVector(&game.basicBuyDeck[3][0], 0);
+    }
+    
+    // 扣除能量
+    game.players[game.now_turn_player_id].energy -= cardData->cost;
+    
+    // 將卡牌加入棄牌堆
+    pushbackVector(&game.players[game.now_turn_player_id].graveyard, buyCardId);
+}

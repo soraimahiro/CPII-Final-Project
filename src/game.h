@@ -41,5 +41,8 @@ void game_play_logic();  // Main game logic
 void print_game_state(); // Debug function to print current game state
 void print_player_state(sPlayer* player); // Debug function to print player state
 
+// 基礎牌商店相關函式
+void buyBasicCard(int32_t type, int32_t level);
+
 #endif
 
