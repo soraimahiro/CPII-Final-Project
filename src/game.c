@@ -322,6 +322,15 @@ void init_character(sPlayer* p){
             break;
         case CHARACTER_SNOWWHITE:
             p->snowWhite.remindPosion = initVector();
+            for(int32_t i = 0; i < 6; i++){
+                pushbackVector(&p->snowWhite.remindPosion, CARD_SNOWWHITE_STATUS_POISON3);
+            }
+            for(int32_t i = 0; i < 6; i++){
+                pushbackVector(&p->snowWhite.remindPosion, CARD_SNOWWHITE_STATUS_POISON2);
+            }
+            for(int32_t i = 0; i < 6; i++){
+                pushbackVector(&p->snowWhite.remindPosion, CARD_SNOWWHITE_STATUS_POISON1);
+            }
             break;
         case CHARACTER_SLEEPINGBEAUTY:
             p->sleepingBeauty.AWAKEN_TOKEN = 0;

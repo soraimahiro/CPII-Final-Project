@@ -303,8 +303,19 @@ int handle_mulan_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_
 }
 
 int put_posion(sPlayer* attacker, sPlayer* defender, vector *dest){
-    move_card(&attacker->snowWhite.remindPosion, dest);
-    defender->life -= attacker->snowWhite.meta4;
+    int32_t card;
+    if(getVectorTop(&attacker->snowWhite.remindPosion, &card)){
+        pushbackVector(dest, card);
+        if(card == CARD_SNOWWHITE_STATUS_POISON2){
+            defender->life -= 1;
+        }
+        else if(card == CARD_SNOWWHITE_STATUS_POISON3){
+            defender->life -= 2;
+        }
+        popbackVector(&attacker->snowWhite.remindPosion);
+        return 1;
+    }
+    return 0;
 }
 
 int ki(sPlayer* player) {
