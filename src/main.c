@@ -21,7 +21,7 @@ int32_t total_turns = 0;           // 總回合數
 int32_t game_duration_seconds = 0; // 遊戲時長（秒）
 
 int main(int argc, char **argv) {
-
+    setvbuf(stdout, NULL, _IONBF, 0);
     init_ui();
 
     change_state(GAME_MENU);

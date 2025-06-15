@@ -358,6 +358,7 @@ int handle_mulan_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_
         case CARD_MULAN_ATK3_UNBREAKABLE: {
             if (distance > 1) return -1;
             int cost_ki = 0;
+            printf("cost ki: ");
             scanf("%d", &cost_ki);
             attacker->mulan.KI_TOKEN -= cost_ki;
             if (place(attacker, defender)) {
@@ -477,7 +478,7 @@ int ki(sPlayer* player) {
 int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level) {
     switch(skill_card->id){
         case CARD_SNOWWHITE_ATK1_CRYSTAL_SHARD:{
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 1){
                 return -1;
             }
             int32_t total_damage = 1 + level;
@@ -485,11 +486,11 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
             if(attacker->snowWhite.meta1 && total_damage > 2){
                 put_posion(attacker, defender, &defender->graveyard);
             }
-            move_card(&defender->deck, &defender->graveyard);
+            move_card(&defender->graveyard, &defender->deck);
             break;
         }
         case CARD_SNOWWHITE_ATK2_CRYSTAL_VORTEX:{
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 1){
                 return -1;
             }
             int32_t total_damage = 2 + level;
@@ -498,12 +499,12 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                 put_posion(attacker, defender, &defender->graveyard);
             }
             for(int32_t i = 0; i < 2; i++){
-                move_card(&defender->deck, &defender->graveyard);
+                move_card(&defender->graveyard, &defender->deck);
             }
             break;
         }
         case CARD_SNOWWHITE_ATK3_CRYSTAL_STORM:{
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 1){
                 return -1;
             }
             int32_t total_damage = 3 + level;
@@ -512,12 +513,12 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                 put_posion(attacker, defender, &defender->graveyard);
             }
             for(int32_t i = 0; i < 3; i++){
-                move_card(&defender->deck, &defender->graveyard);
+                move_card(&defender->graveyard, &defender->deck);
             }
             break;
         }
         case CARD_SNOWWHITE_DEF1_TAINTED_GRACE:{
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 1){
                 return -1;
             }
             int32_t posionCardNumber;
@@ -533,21 +534,32 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                 }
             }
             attack(defender, 1);
-            char c = 'n';
-            if(posionCardNumber >= 1){
-                printf("Do you wnat to put one into deck(y/n): ");
-                scanf("%c", &c);
-                if(c == 'y'){
+            DEBUG_PRINT("attack com\n");
+            int c;
+            if(posionCardNumber >= 1 && countCard(&attacker->metamorphosis, CARD_SNOWWHITE_METAMORPH2_FALLEN_CALAMITY)){
+                printf("Do you wnat to put one into deck(1/0): ");
+                scanf("%d", &c);
+                if(c){
                     put_posion(attacker, defender, &defender->deck);
                     for(int32_t i = 1; i < posionCardNumber; i++){
                         put_posion(attacker, defender, &defender->graveyard);
                     }
                 }
+                else{
+                    for(int32_t i = 0; i < posionCardNumber; i++){
+                        put_posion(attacker, defender, &defender->graveyard);
+                    }
+                }
+            }
+            else{
+                for(int32_t i = 0; i < posionCardNumber; i++){
+                    put_posion(attacker, defender, &defender->graveyard);
+                }
             }
             break;
         }
         case CARD_SNOWWHITE_DEF2_TAINTED_FEAST:{
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 1){
                 return -1;
             }
             int32_t posionCardNumber;
@@ -563,8 +575,9 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                 }
             }
             attack(defender, 2);
+            DEBUG_PRINT("attack com\n");
             char c = 'n';
-            if(posionCardNumber >= 1){
+            if(posionCardNumber >= 1 && countCard(&attacker->metamorphosis, CARD_SNOWWHITE_METAMORPH2_FALLEN_CALAMITY)){
                 printf("Do you wnat to put one into deck(y/n): ");
                 scanf("%c", &c);
                 if(c == 'y'){
@@ -573,11 +586,21 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                         put_posion(attacker, defender, &defender->graveyard);
                     }
                 }
+                else{
+                    for(int32_t i = 0; i < posionCardNumber; i++){
+                        put_posion(attacker, defender, &defender->graveyard);
+                    }
+                }
+            }
+            else{
+                for(int32_t i = 0; i < posionCardNumber; i++){
+                    put_posion(attacker, defender, &defender->graveyard);
+                }
             }
             break;
         }
         case CARD_SNOWWHITE_DEF3_TAINTED_CARNIVAL:{
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 1){
                 return -1;
             }
             int32_t posionCardNumber;
@@ -593,8 +616,9 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                 }
             }
             attack(defender, 3);
+            DEBUG_PRINT("attack com\n");
             char c = 'n';
-            if(posionCardNumber >= 1){
+            if(posionCardNumber >= 1 && countCard(&attacker->metamorphosis, CARD_SNOWWHITE_METAMORPH2_FALLEN_CALAMITY)){
                 printf("Do you wnat to put one into deck(y/n): ");
                 scanf("%c", &c);
                 if(c == 'y'){
@@ -603,11 +627,21 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
                         put_posion(attacker, defender, &defender->graveyard);
                     }
                 }
+                else{
+                    for(int32_t i = 0; i < posionCardNumber; i++){
+                        put_posion(attacker, defender, &defender->graveyard);
+                    }
+                }
+            }
+            else{
+                for(int32_t i = 0; i < posionCardNumber; i++){
+                    put_posion(attacker, defender, &defender->graveyard);
+                }
             }
             break;
         }
         case CARD_SNOWWHITE_MOVE1_BROKEN_FANTASY:{
-            if(abs(attacker->locate[0] - defender->locate[0]) >= level){
+            if(abs(attacker->locate[0] - defender->locate[0]) > level){
                 return -1;
             }
             attack(defender, 1);
@@ -637,7 +671,7 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
             break;
         }
         case CARD_SNOWWHITE_MOVE2_BROKEN_REALITY:{
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 1 + level){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 1 + level){
                 return -1;
             }
             attack(defender, 2);
@@ -667,7 +701,7 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
             break;
         }
         case CARD_SNOWWHITE_MOVE3_BROKEN_FATE:{
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 2 + level){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 2 + level){
                 return -1;
             }
             attack(defender, 3);
@@ -705,7 +739,7 @@ int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* sk
 int handle_snowwhite_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card){
     switch(ultimate_card->id) {
         case CARD_SNOWWHITE_SPECIAL1_SEVEN_SNAKES_RAGE:
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 1){
                 return -1;
             }
             int32_t damage = 0;
@@ -717,7 +751,7 @@ int handle_snowwhite_ultimate(sPlayer* attacker, sPlayer* defender, const Card* 
             defender->life -= damage;
             return 0;
         case CARD_SNOWWHITE_SPECIAL2_MAGIC_MIRROR_RAIN:
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 1){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 1){
                 return -1;
             }
             attack(defender, 3);
@@ -727,7 +761,7 @@ int handle_snowwhite_ultimate(sPlayer* attacker, sPlayer* defender, const Card* 
             draw_card(defender, 4);
             return 0;
         case CARD_SNOWWHITE_SPECIAL3_BREWED_DISASTER:
-            if(abs(attacker->locate[0] - defender->locate[0]) >= 3){
+            if(abs(attacker->locate[0] - defender->locate[0]) > 3){
                 return -1;
             }
             attack(defender, 3);

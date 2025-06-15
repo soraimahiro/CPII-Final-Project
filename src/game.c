@@ -169,7 +169,7 @@ void game_init() {
     
     // 3. 設置初始抽牌
     initial_draw();
-    
+
     // 4. 設置遊戲狀態
     game.now_turn_player_id = 0;  // 玩家1先攻
     game.status = CHOOSE_MOVE;    // 從選擇移動開始
@@ -286,6 +286,10 @@ void game_init() {
     }
     
     DEBUG_PRINT("=== END GAME INITIALIZATION DEBUG ===\n\n");
+    if (game.players[game.now_turn_player_id].isBOT) {
+        bot_act();
+        next_phase();
+    }
 }
 
 void init_character(sPlayer* p){
@@ -436,7 +440,7 @@ void attack(sPlayer* defender, int total_damage) {
         total_damage -= ki(defender);
         if (total_damage < 0) total_damage = 0;
     }
-
+    DEBUG_PRINT("atk1\n");
     int remaining_damage = 0;
     if (defender->defense > 0) {
         if (defender->defense >= total_damage) {
@@ -449,11 +453,13 @@ void attack(sPlayer* defender, int total_damage) {
         }
     } 
     else {
+        remaining_damage = total_damage;
         defender->life = (defender->life > total_damage) ? 
                         defender->life - total_damage : 0;
     }
     // TODO: if (defender->life <= defender->specialGate) 必殺技();
-
+    DEBUG_PRINT("atk2\n");
+    DEBUG_PRINT("%d\n",remaining_damage);
     if (remaining_damage) {
         if (attacker->character == CHARACTER_SLEEPINGBEAUTY) {
             attacker->sleepingBeauty.caused_damage += remaining_damage;
@@ -466,14 +472,36 @@ void attack(sPlayer* defender, int total_damage) {
                     defender->sleepingBeauty.AWAKEN = 1;
                 }
             }
+            DEBUG_PRINT("atk3\n");
             if (countCard(&defender->usecards, CARD_SLEEPINGBEAUTY_SPECIAL2_DAYMARE)) {
                 int draw_count = min(remaining_damage, 6 - defender->sleepingBeauty.dayNightmareDrawRemind);
                 draw_card(defender, draw_count);
                 defender->sleepingBeauty.dayNightmareDrawRemind = min(defender->sleepingBeauty.dayNightmareDrawRemind + remaining_damage, 6);
             }
         }
-            
-        
+    }
+    const char* character_data[CHARACTER_COUNT] = {"小紅帽", "白雪公主", "愛麗絲", "花木蘭", "輝夜姬", "火柴女孩"};
+    if (defender->life <= defender->specialGate) {
+        printf("%s choose 1 ultimate card (1-3): ", character_data[defender->character]);
+        int choice;
+        scanf("%d", &choice);
+        if (choice < 1 || choice > 3) {
+            choice = 1;  // 預設選擇第一張
+        }
+        int ultimate_id;
+        for (int i = 0; i < 3; i++) {
+            if (choice == 3) {
+                getVectorTop(&defender->specialDeck, &ultimate_id);
+                popbackVector(&defender->specialDeck);
+                break;
+            }
+            if (i == choice) getVectorTop(&defender->specialDeck, &ultimate_id);
+            popbackVector(&defender->specialDeck);
+        }
+        pushbackVector(&defender->graveyard, ultimate_id);
+    }
+    if(defender->life <= 0){
+        change_state(GAME_OVER);
     }
 }
 
@@ -506,6 +534,7 @@ void move(sPlayer* player, int total_move) {
 
 // Attack action
 void handle_attack(sPlayer* attacker, sPlayer* defender, int handIndex) {
+    DEBUG_PRINT("\033[31mhandle attack\033[0m\n");
     if (abs(attacker->locate[0] - defender->locate[0]) > 1) {
         printf("range is not enough\n");
         return;
@@ -530,6 +559,7 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int handIndex) {
 
     if (attacker->character == CHARACTER_MULAN) {
         int cost_ki = 0;
+        printf("cost ki: ");
         scanf("%d", &cost_ki);
         attacker->mulan.KI_TOKEN -= cost_ki;
         total_damage += cost_ki;
@@ -544,10 +574,12 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int handIndex) {
     if(attacker->character == CHARACTER_SNOWWHITE && attacker->snowWhite.meta1 && total_damage > 2){
         put_posion(attacker, defender, &defender->graveyard);
     }
+    
 }
 
 // Defense action
 void handle_defense(sPlayer* player, int handIndex) {
+    DEBUG_PRINT("\033[31mhandle defense\033[0m\n");
     int total_defense = 0;
     int total_energy = 0;
     bool continue_defense = true;
@@ -571,6 +603,7 @@ void handle_defense(sPlayer* player, int handIndex) {
 
 // Move action
 void handle_move(sPlayer* player, int handIndex) {
+    DEBUG_PRINT("\033[31mhandle move\033[0m\n");
     int total_move = 0;
     bool continue_move = true;
         
@@ -608,8 +641,8 @@ void handle_move(sPlayer* player, int handIndex) {
 void set_skills(int handIndex) {
     game.set_skill_hand = handIndex;
 }
-void handle_skills(sPlayer* attacker, sPlayer* defender
-, int basicIndex) {
+void handle_skills(sPlayer* attacker, sPlayer* defender, int basicIndex) {
+    DEBUG_PRINT("\033[31mhandle skill\033[0m\n");
     int skillIndex = game.set_skill_hand;
 
     int total_damage = 0;
@@ -622,20 +655,17 @@ void handle_skills(sPlayer* attacker, sPlayer* defender
     int32_t basic_card_id = attacker->hand.array[basicIndex];
     const Card* basic_card = getCardData(basic_card_id);
 
-    pushbackVector(&attacker->usecards, skill_card_id);
-    eraseVector(&attacker->hand, skillIndex);
-    pushbackVector(&attacker->usecards, basic_card_id);
-    eraseVector(&attacker->hand, basicIndex);
+    
     
     if (skill_card_id <= 19) {
         if (handle_redhood_skills(attacker, defender, skill_card, basic_card->level)) {
-            printf("range not enough\n");
+            DEBUG_PRINT("range not enough\n");
             return;
         };
     }
     else if (skill_card_id <= 31) {
         if (handle_snowwhite_skills(attacker, defender, skill_card, basic_card->level)) {
-            printf("range not enough\n");
+            DEBUG_PRINT("range not enough\n");
             return;
         }
     }
@@ -673,6 +703,10 @@ void handle_skills(sPlayer* attacker, sPlayer* defender
             return;
         }
     }
+    pushbackVector(&attacker->usecards, skill_card_id);
+    eraseVector(&attacker->hand, skillIndex);
+    pushbackVector(&attacker->usecards, basic_card_id);
+    eraseVector(&attacker->hand, basicIndex);
 }
 
 void handle_ultimate(sPlayer* attacker, sPlayer* defender, int handIndex) {
@@ -681,20 +715,8 @@ void handle_ultimate(sPlayer* attacker, sPlayer* defender, int handIndex) {
     int total_move = 0;
     int total_energy = 0; //
     
-    int choice;
-    while (1) {
-        printf("\nChoose an skill card (1-%d) or 0 to stop: ", attacker->hand.SIZE);
-        
-        scanf("%d", &choice);
-        if (choice == 0)  return;
-        else if (choice < 1 || choice > attacker->hand.SIZE) {
-            printf("Invalid choice!\n");
-            continue;
-        }
-        else break; // TODO: check if type is ultimate
-    }
     // Get the selected card
-    int32_t ultimate_card_id = attacker->hand.array[choice - 1];
+    int32_t ultimate_card_id = attacker->hand.array[handIndex];
     const Card* ultimate_card = getCardData(ultimate_card_id);
         
     //TODO: 檢查是否為必殺牌 
@@ -710,8 +732,20 @@ void handle_ultimate(sPlayer* attacker, sPlayer* defender, int handIndex) {
             return;
         }
     }
+    if (ultimate_card_id <= 46) {
+        if (handle_sleepingbeauty_ultimate(attacker, defender, ultimate_card)) {
+            printf("invalid!\n");
+            return;
+        }
+    }
+    else {
+        if(handle_mulan_ultimate(attacker, defender, ultimate_card)){
+            printf("invalid!\n");
+            return;
+        }
+    }
     pushbackVector(&attacker->usecards, ultimate_card_id);
-    eraseVector(&attacker->hand, choice - 1);
+    eraseVector(&attacker->hand, handIndex);
 }
 
 // 抽牌函數
@@ -975,6 +1009,7 @@ int activation_phase(int32_t handIndex){
     sPlayer* opponent = &game.players[(game.now_turn_player_id + 1) % 2];
     int32_t cardID = current_player->hand.array[handIndex];
     const Card* card = getCardData(cardID);
+    DEBUG_PRINT("my locate: %d, oppoent locate: %d\n", current_player->locate[0], opponent->locate[0]);
 
     if (game.focused) {
         eraseVector(&current_player->hand, handIndex);
@@ -985,8 +1020,9 @@ int activation_phase(int32_t handIndex){
     if (game.set_skill_hand != -1) {
         int32_t skillCardID = current_player->hand.array[game.set_skill_hand];
         const Card* skill_card = getCardData(skillCardID);
-        if (card->type == TYPE_BASIC || skill_card->type == card->type) {
+        if (card->id <= 10 && (card->type == TYPE_BASIC || skill_card->type == card->type)) {
             handle_skills(current_player, opponent, handIndex);
+            return 0;
         }
         else {
             set_skills(-1);
@@ -1013,6 +1049,9 @@ int activation_phase(int32_t handIndex){
         set_skills(handIndex);
     }
     else handle_ultimate(current_player, opponent, handIndex);
+    DEBUG_PRINT_VEC(&current_player->hand, "hand");
+    DEBUG_PRINT_VEC(&current_player->graveyard, "graveyard");
+    DEBUG_PRINT("%d\n", game.set_skill_hand);
     
     return 0; // 加入返回值
 }
@@ -1026,23 +1065,19 @@ void bot_act() {
     int32_t hand_size = current_player->hand.SIZE;
     
     // 複製手牌到新陣列
-    for (int i = 0; i < hand_size; i++) {
-        hand_cards[i] = current_player->hand.array[i];
-    }
-    
-    // 洗牌
-    srand(time(NULL));
-    for (int i = hand_size - 1; i > 0; i--) {
-        int j = rand() % (i + 1);
-        // 交換元素
-        int32_t temp = hand_cards[i];
-        hand_cards[i] = hand_cards[j];
-        hand_cards[j] = temp;
+    int i = 0;
+    int j = 0;
+    while (j < hand_size) {
+        if (current_player->hand.array[i] <= 6) {
+            hand_cards[i] = j;
+            i++;
+        }
+        j++;
     }
     
     // 依序執行每張牌
-    for (int i = 0; i < hand_size; i++) {
-        activation_phase(hand_cards[i]);
+    for (j = 0; j < i; j++) {
+        activation_phase(hand_cards[j]);
     }
 } 
 
@@ -1056,4 +1091,28 @@ int next_phase() {
     }
     
     return 0;
+}
+
+void buyBasicCard(int32_t type, int32_t level) {
+    // 獲取卡牌ID
+    int32_t cardId = (type == 3) ? 10 : (type * 3 + level);
+    const Card* cardData = getCardData(cardId);
+    
+    if (!cardData) return;
+    
+    // 從基礎牌商店移除卡牌
+    int32_t buyCardId;
+    if (type < 3) {
+        buyCardId = game.basicBuyDeck[type][level-1].array[0];
+        eraseVector(&game.basicBuyDeck[type][level-1], 0);
+    } else {
+        buyCardId = game.basicBuyDeck[3][0].array[0];
+        eraseVector(&game.basicBuyDeck[3][0], 0);
+    }
+    
+    // 扣除能量
+    game.players[game.now_turn_player_id].energy -= cardData->cost;
+    
+    // 將卡牌加入棄牌堆
+    pushbackVector(&game.players[game.now_turn_player_id].graveyard, buyCardId);
 }

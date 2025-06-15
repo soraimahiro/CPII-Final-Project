@@ -5,7 +5,9 @@
 #include <stdint.h>
 
 #include "../architecture.h"
-#include "ui.h"
+#include "../card.h"
+#include "../game.h"
+#include "ui_component.h"
 
 // 卡牌區域按鈕管理結構
 typedef struct {
@@ -49,6 +51,7 @@ typedef struct {
     sCardAreaButtons metamorphosisAreaButtons;      // 反轉牌區域按鈕
     sCardAreaButtons opponentHandAreaButtons;  // 對手手牌區域按鈕
     sCardAreaButtons skillAreaButtons;     // 技能區域按鈕
+    sCardAreaButtons graveyardButtons;     // 棄牌區按鈕
     
     // UI state
     int32_t selectedCard;
@@ -81,6 +84,7 @@ typedef struct {
     // 卡片詳細信息彈窗狀態
     bool showCardDetailPopup;
     int32_t selectedCardIndex;  // 當前選中的卡片索引
+    sButton *useHandButton;
     
     // Hover states
     bool hoveringShop;
@@ -123,6 +127,7 @@ void draw_card_area_stage(const char* title, vector* cards, int32_t x, int32_t y
 // New popup window functions
 void draw_shop_popup();
 void draw_deck_popup(const char* title, vector* deck, vector* graveyard);
+void draw_skill_shop_popup(const char* title, int32_t skillType);
 void draw_hover_preview(const char* title, vector* cards, int32_t mouseX, int32_t mouseY);
 void handle_popup_events(SDL_Event* event);
 
