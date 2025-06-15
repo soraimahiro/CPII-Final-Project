@@ -745,10 +745,10 @@ void draw_battle_grid_stage() {
         
         if(hasPlayer) {
             // Draw player in cell
-            if(playerInCell == game.now_turn_player_id) {
-                SDL_SetRenderDrawColor(uiBase.renderer, 0, 150, 0, 255); // Green for current player
+            if(playerInCell == 0) {
+                SDL_SetRenderDrawColor(uiBase.renderer, 0, 150, 0, 255); // Green for player 1
             } else {
-                SDL_SetRenderDrawColor(uiBase.renderer, 150, 0, 0, 255); // Red for opponent
+                SDL_SetRenderDrawColor(uiBase.renderer, 150, 0, 0, 255); // Red for player 2
             }
             SDL_RenderFillRect(uiBase.renderer, &cell);
         } else {
@@ -776,10 +776,10 @@ void draw_player_info_stage(int32_t player_id, int32_t x, int32_t y, bool is_cur
     
     // Background
     SDL_Rect bgRect = {x, y, LEFT_COLUMN_WIDTH - 20, 90};
-    if(is_current) {
-        SDL_SetRenderDrawColor(uiBase.renderer, 0, 80, 0, 255); // Green for current player
+    if(player_id == 0) {
+        SDL_SetRenderDrawColor(uiBase.renderer, 0, 80, 0, 255); // Green for player 1
     } else {
-        SDL_SetRenderDrawColor(uiBase.renderer, 80, 0, 0, 255); // Red for opponent
+        SDL_SetRenderDrawColor(uiBase.renderer, 80, 0, 0, 255); // Red for player 2
     }
     SDL_RenderFillRect(uiBase.renderer, &bgRect);
     SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
