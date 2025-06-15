@@ -147,7 +147,6 @@ void game_init() {
         player->defense = 0;
         player->energy = 0;
         player->specialGate = charInfo.ultimate_threshold;
-        printf("%d\n", player->character);
         
         // 設置起始位置
         player->locate[0] = (i == 0) ? 4 : 6;  // 玩家1在4，玩家2在6
@@ -504,7 +503,7 @@ void move(sPlayer* player, int total_move) {
 }
 
 // Attack action
-void handle_attack(sPlayer* attacker, sPlayer* defender, int specific_id) {
+void handle_attack(sPlayer* attacker, sPlayer* defender, int handIndex) {
     if (abs(attacker->locate[0] - defender->locate[0]) > 1) {
         printf("range is not enough\n");
         return;
@@ -520,172 +519,79 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int specific_id) {
     // TODO
     int cost_ki = 0;
     
-    while (continue_attack) {
-        printf("\nChoose an attack card (1-%d) or 0 to stop: ", attacker->hand.SIZE);
-        int choice;
-        scanf("%d", &choice);
-        
-        if (choice == 0) {
-            continue_attack = false;
-            break;
-        }
-        
-        if (choice < 1 || choice > attacker->hand.SIZE) {
-            printf("Invalid choice!\n");
-            continue;
-        }
-        
-        // Get the selected card
-        int32_t card_id = attacker->hand.array[choice - 1];
-        const Card* card = getCardData(card_id);
-        
-        // 檢查是否為攻擊牌或通用牌
-        if (card->type != TYPE_ATTACK && card->type != TYPE_BASIC) {
-            printf("Not an attack card!\n");
-            continue;
-        }
-        
-        // Calculate damage and energy
-        int card_value = card->damage;
-        total_damage += card_value;
-        total_energy += card_value;
-        
+    // Get the selected card
+    int32_t card_id = attacker->hand.array[handIndex];
+    const Card* card = getCardData(card_id);
+    
+    // Calculate damage and energy
+    int card_value = card->damage;
+    total_damage += card_value;
+    attacker->energy += card->level;
+    if (attacker->energy > 25) attacker->energy = 25;  
 
-        if (attacker->character == CHARACTER_MULAN) {
-            int cost_ki = 0;
-            scanf("%d", &cost_ki);
-            attacker->mulan.KI_TOKEN -= cost_ki;
-            total_damage += cost_ki;
-        }
-
-        // Move card to usecards
-        pushbackVector(&attacker->usecards, card_id);
-        eraseVector(&attacker->hand, choice - 1);
-        
-        printf("Added %d damage and energy\n", card_value);
+    if (attacker->character == CHARACTER_MULAN) {
+        int cost_ki = 0;
+        scanf("%d", &cost_ki);
+        attacker->mulan.KI_TOKEN -= cost_ki;
+        total_damage += cost_ki;
     }
 
-    if (total_damage > 0) {
-        attack(defender, total_damage);
-        // Add energy
-        attacker->energy += total_energy;
-        if (attacker->energy > 25) attacker->energy = 25;
-        
-        printf("\nAttack Summary:\n");
-        printf("Total Damage: %d\n", total_damage);
-        printf("Energy Gained: %d\n", total_energy);
-        printf("Defender's HP: %d/%d\n", defender->life, defender->maxlife);
-        printf("Defender's Defense: %d/%d\n", defender->defense, defender->maxdefense);
-    }
+    // Move card to usecards
+    pushbackVector(&attacker->usecards, card_id);
+    eraseVector(&attacker->hand, handIndex);   
+
+    attack(defender, total_damage);
+
     if(attacker->character == CHARACTER_SNOWWHITE && attacker->snowWhite.meta1 && total_damage > 2){
         put_posion(attacker, defender, &defender->graveyard);
     }
 }
 
 // Defense action
-void handle_defense(sPlayer* player, int specific_id) {
-    printf("\nDefense Action:\n");
-    print_hand_cards(player);
-    
+void handle_defense(sPlayer* player, int handIndex) {
     int total_defense = 0;
     int total_energy = 0;
     bool continue_defense = true;
+        
+    // Get the selected card
+    int32_t card_id = player->hand.array[handIndex];
+    const Card* card = getCardData(card_id);
     
-    while (continue_defense) {
-        printf("\nChoose a defense card (1-%d) or 0 to stop: ", player->hand.SIZE);
-        int choice;
-        scanf("%d", &choice);
-        
-        if (choice == 0) {
-            continue_defense = false;
-            continue;
-        }
-        
-        if (choice < 1 || choice > player->hand.SIZE) {
-            printf("Invalid choice!\n");
-            continue;
-        }
-        
-        // Get the selected card
-        int32_t card_id = player->hand.array[choice - 1];
-        const Card* card = getCardData(card_id);
-        
-        // 檢查是否為防禦牌或通用牌
-        if (card->type != TYPE_DEFENSE && card->type != TYPE_BASIC) {
-            printf("Not a defense card!\n");
-            continue;
-        }
-        
-        // Calculate defense and energy
-        int card_value = card->defense;
-        total_defense += card_value;
-        total_energy += card_value;
-        
-        // Move card to usecards
-        pushbackVector(&player->usecards, card_id);
-        eraseVector(&player->hand, choice - 1);
-        
-        printf("Added %d defense and energy\n", card_value);
-    }
+    // Calculate defense and energy
+    int card_value = card->defense;
+    total_defense += card_value;
+    player->energy += card->level;
+    if (player->energy > 25) player->energy = 25;
     
-    if (total_defense > 0) {
-        // Apply defense
-        defend(player, total_defense);
-        
-        // Add energy
-        player->energy += total_energy;
-        if (player->energy > 25) player->energy = 25;
-        
-        printf("\nDefense Summary:\n");
-        printf("Total Defense Added: %d\n", total_defense);
-        printf("Energy Gained: %d\n", total_energy);
-        printf("Current Defense: %d/%d\n", player->defense, player->maxdefense);
-    }
+    // Move card to usecards
+    pushbackVector(&player->usecards, card_id);
+    eraseVector(&player->hand, handIndex);
+    
+    defend(player, total_defense);
 }
 
 // Move action
-void handle_move(sPlayer* player, int specific_id) {
-    printf("\nMove Action:\n");
-    print_hand_cards(player);
-    
+void handle_move(sPlayer* player, int handIndex) {
     int total_move = 0;
-    int total_energy = 0;
     bool continue_move = true;
+        
+    // Get the selected card
+    int32_t card_id = player->hand.array[handIndex];
+    const Card* card = getCardData(card_id);
     
-    while (continue_move) {
-        printf("\nChoose a move card (1-%d) or 0 to stop: ", player->hand.SIZE);
-        int choice;
-        scanf("%d", &choice);
-        
-        if (choice == 0) {
-            continue_move = false;
-            //continue;
-        }
-        
-        if (choice < 1 || choice > player->hand.SIZE) {
-            printf("Invalid choice!\n");
-            //continue;
-        }
-        
-        // Get the selected card
-        int32_t card_id = player->hand.array[choice - 1];
-        
-        if (!is_basic_card(card_id, TYPE_MOVE) && card_id != 10) {
-            printf("Not a move card!\n");
-            //continue;
-        }
-        
-        // Calculate move distance and energy
-        int card_value = get_card_value(card_id);
-        total_move += card_value;
-        total_energy += card_value;
-        
-        // Move card to usecards
-        pushbackVector(&player->usecards, card_id);
-        eraseVector(&player->hand, choice - 1);
-        
-        printf("Added %d move distance and energy\n", card_value);
+    if (!is_basic_card(card_id, TYPE_MOVE) && card_id != 10) {
+        printf("Not a move card!\n");
+        //continue;
     }
+    
+    // Calculate move distance and energy
+    total_move += card->level;
+    player->energy += card->level;
+    if (player->energy > 25) player->energy = 25;
+    
+    // Move card to usecards
+    pushbackVector(&player->usecards, card_id);
+    eraseVector(&player->hand, handIndex);
 
 
     if (countCard(&player->metamorphosis, CARD_MULAN_METAMORPH3_CHARGE) && player->mulan.KI_TOKEN) {
@@ -698,15 +604,6 @@ void handle_move(sPlayer* player, int specific_id) {
     if (total_move > 0) {
         // Apply movement
         move(player, total_move);
-        
-        // Add energy
-        player->energy += total_energy;
-        if (player->energy > 25) player->energy = 25;
-        
-        printf("\nMove Summary:\n");
-        printf("Total Move Distance: %d\n", total_move);
-        printf("Energy Gained: %d\n", total_energy);
-        printf("New Position: %d\n", player->locate[0]);
     }
 }
 
@@ -913,6 +810,8 @@ void game_play_logic() {
     refresh_phase(); 
 
     // 行動階段
+
+
     bool action_phase_end = false;
     while (!action_phase_end) {
         printf("\n=== Action Phase ===\n");
@@ -1113,37 +1012,70 @@ void game_play_logic() {
     waiting_for_input = true;
 }
 
-int activation_phase(int32_t cardID){
+int activation_phase(int32_t handIndex){
     sPlayer* current_player = &game.players[game.now_turn_player_id];
     sPlayer* opponent = &game.players[(game.now_turn_player_id + 1) % 2];
+    int32_t cardID = current_player->hand.array[handIndex];
 
     if(cardID >= CARD_BASIC_ATK1 && cardID <= CARD_BASIC_ATK3){
-        handle_attack(current_player, opponent, cardID);
+        handle_attack(current_player, opponent, handIndex);
     }
     else if(cardID >= CARD_BASIC_DEF1 && cardID <= CARD_BASIC_DEF3){
-        handle_defense(current_player, cardID);
+        handle_defense(current_player, handIndex);
     }
     else if(cardID >= CARD_BASIC_MOVE1 && cardID <= CARD_BASIC_MOVE3){
-        handle_move(current_player, cardID);
+        handle_move(current_player, handIndex);
     }
-    /*else if(cardID == CARD_BASIC_COMMON){
-
-    }*/
-    /*else if(cardID >= 131 && cardID <= 133){
+    else if(cardID >= 131 && cardID <= 133){
         current_player->energy += 1;
         if (current_player->energy > 25) current_player->energy = 25;
         pushbackVector(&current_player->graveyard, cardID);
-        eraseVector(&current_player->hand, choice - 1);
-        return;
-    }*/
+        eraseVector(&current_player->hand, handIndex);
+    }
+    else {
+        handle_skills(current_player, opponent);
+    }
     
     return 0; // 加入返回值
 }
+ 
+
+void bot_act() {
+    sPlayer* current_player = &game.players[game.now_turn_player_id];
+    
+    // 創建一個新陣列來存儲手牌
+    int32_t hand_cards[256];  // 假設最多256張手牌
+    int32_t hand_size = current_player->hand.SIZE;
+    
+    // 複製手牌到新陣列
+    for (int i = 0; i < hand_size; i++) {
+        hand_cards[i] = current_player->hand.array[i];
+    }
+    
+    // 洗牌
+    srand(time(NULL));
+    for (int i = hand_size - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        // 交換元素
+        int32_t temp = hand_cards[i];
+        hand_cards[i] = hand_cards[j];
+        hand_cards[j] = temp;
+    }
+    
+    // 依序執行每張牌
+    for (int i = 0; i < hand_size; i++) {
+        activation_phase(hand_cards[i]);
+    }
+} 
 
 int next_phase(){
     ending_phase();
     beginning_phase();
     refresh_phase();
+    if (game.players[game.now_turn_player_id].isBOT) {
+        bot_act();
+        next_phase();
+    }
     
     return 0;
 }
