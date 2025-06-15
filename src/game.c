@@ -19,9 +19,14 @@ void setup_initial_deck(sPlayer* player) {
     
     // 添加角色牌
     int base_id = (player->character) * 12 + 11;  // 計算角色牌的起始ID
+    int top_id = 0;
     pushbackVector(&player->deck, base_id);      // 角色攻擊lv1
+    eraseVector(&player->attackSkill, top_id);
     pushbackVector(&player->deck, base_id + 3);  // 角色防禦lv1
+    eraseVector(&player->defenseSkill, top_id);
     pushbackVector(&player->deck, base_id + 6);  // 角色移動lv1
+    eraseVector(&player->moveSkill, top_id);
+    
     
     // 洗牌
     shuffle(&player->deck);
@@ -30,16 +35,29 @@ void setup_initial_deck(sPlayer* player) {
 // 設置技能牌堆
 void setup_skill_decks(sPlayer* player) {
     int base_id = player->character * 12 + 11;  // 角色基本牌起始ID
+    int meta_id = player->character * 4 + 135;
     
     pushbackVector(&player->attackSkill, base_id);
-    pushbackVector(&player->attackSkill, base_id + 1);
-    pushbackVector(&player->attackSkill, base_id + 2);
     pushbackVector(&player->defenseSkill, base_id + 3);
-    pushbackVector(&player->defenseSkill, base_id + 4);
-    pushbackVector(&player->defenseSkill, base_id + 5);
     pushbackVector(&player->moveSkill, base_id + 6);
-    pushbackVector(&player->moveSkill, base_id + 7);
-    pushbackVector(&player->moveSkill, base_id + 8);
+    
+    for (int i = 0; i < 2; i++) {
+        pushbackVector(&player->attackSkill, base_id + 1);
+        pushbackVector(&player->defenseSkill, base_id + 4);
+        pushbackVector(&player->moveSkill, base_id + 7);
+    }
+    pushbackVector(&player->attackSkill, meta_id);
+    pushbackVector(&player->defenseSkill, meta_id + 1);
+    pushbackVector(&player->moveSkill, meta_id + 2);
+    
+    for (int i = 0; i < 3; i++) {
+        pushbackVector(&player->attackSkill, base_id + 2);
+        pushbackVector(&player->defenseSkill, base_id + 5);
+        pushbackVector(&player->moveSkill, base_id + 8);
+    }
+    pushbackVector(&player->attackSkill, meta_id + 3);
+    pushbackVector(&player->defenseSkill, meta_id + 3);
+    pushbackVector(&player->moveSkill, meta_id + 3);
 }
 
 // 設置必殺牌
@@ -137,14 +155,14 @@ void game_init() {
         // 初始化所有vector
         init_character(player);
         
-        // 設置初始牌堆
-        setup_initial_deck(player);
-        
         // 設置技能牌堆
         setup_skill_decks(player);
         
         // 設置必殺牌
         setup_ultimate_cards(player);
+
+        // 設置初始牌堆
+        setup_initial_deck(player);
     }
     
     // 2. 設置基本供應牌庫
