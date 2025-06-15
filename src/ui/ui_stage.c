@@ -659,7 +659,12 @@ void draw_right_column_stage() {
     // Action buttons (bottom)
     for(int32_t i = 0; i < 2; i++) {
         if(battleUIStage.actionButtons[i]) {
-            int8_t buttonType = mouse_in_button(battleUIStage.actionButtons[i]) ? 1 : 0;
+            int8_t buttonType;
+            if (i == 0) {  // Focus button
+                buttonType = game.focused ? 2 : (mouse_in_button(battleUIStage.actionButtons[i]) ? 1 : 0);
+            } else {  // End turn button
+                buttonType = mouse_in_button(battleUIStage.actionButtons[i]) ? 1 : 0;
+            }
             draw_button(battleUIStage.actionButtons[i], buttonType);
         }
     }
@@ -1103,6 +1108,14 @@ void draw_hover_preview(const char* title, vector* cards, int32_t mouseX, int32_
 
 void handle_battle_events_stage(SDL_Event* event) {
     if (!event) return;
+    
+    // Handle focus button click
+    if (event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
+        if (battleUIStage.actionButtons[0] && mouse_in_button(battleUIStage.actionButtons[0])) {
+            game.focused = !game.focused;  // Toggle focus state
+            return;
+        }
+    }
     
     // 處理移動方向選擇按鈕點擊
     if (battleUIStage.showMoveDirectionPopup && event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
