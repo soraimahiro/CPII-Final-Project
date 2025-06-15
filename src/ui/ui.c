@@ -252,6 +252,7 @@ void init_ui() {
         printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
         return;
     }
+    SDL_SetRenderDrawBlendMode(uiBase.renderer, SDL_BLENDMODE_BLEND);
 }
 
 void close_ui() {
@@ -402,7 +403,7 @@ void game_init_bot_select_ui(){
     // 顯示確認對話框
     if(showConfirmDialog) {
         // 半透明背景
-        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, TRANSPRANCY);
         SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         SDL_RenderFillRect(uiBase.renderer, &overlay);
         
@@ -611,7 +612,7 @@ void game_init_character_select_ui(){
     // 顯示警告對話框
     if(stateComponent.characterSelect->showWarningDialog) {
         // 半透明背景覆蓋層
-        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, TRANSPRANCY);
         SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         SDL_RenderFillRect(uiBase.renderer, &overlay);
         
@@ -668,7 +669,7 @@ void game_init_character_select_ui(){
     // 顯示角色資訊浮空視窗
     if(stateComponent.characterSelect->showCharacterInfo != -1) {
         // 半透明背景覆蓋層
-        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, TRANSPRANCY);
         SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         SDL_RenderFillRect(uiBase.renderer, &overlay);
         
