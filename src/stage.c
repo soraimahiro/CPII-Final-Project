@@ -30,6 +30,7 @@ int check_game_winner(){
 
 int beginning_phase() {
     sPlayer *pCurrentPlayer = &(game.players[game.now_turn_player_id]);
+    sPlayer *pOpponentPlayer = &(game.players[(game.now_turn_player_id + 1) % 2]);
     
     DEBUG_PRINT("--- Beginning Phase ---\n");
     DEBUG_PRINT("Current Player ID: %d\n", game.now_turn_player_id);
@@ -47,46 +48,24 @@ int beginning_phase() {
     DEBUG_PRINT_VEC(&pCurrentPlayer->specialDeck, "Special Deck");
     
     // 統計回合數 (只在玩家1的回合開始時增加，避免重複計算)
-    if(game.now_turn_player_id == 0) {
+    if (game.now_turn_player_id == 0) {
         total_turns++;
     }
     
     // 處理小紅帽護盾持續效果
-    if(pCurrentPlayer->character == 0) { // Little Red Riding Hood
-        if(pCurrentPlayer->defense > 0) {
-            // 檢查使用過的防禦技能是否有持續效果
-            // 根據防禦技能等級決定射程和傷害
-            int32_t damage = 0;
-            int32_t range = 0;
-            
-            // 簡化實現：假設使用了護盾技能，檢查防禦值來判斷等級
-            if(pCurrentPlayer->defense >= 3) {
-                damage = 6;
-                range = 3;
-            } else if(pCurrentPlayer->defense >= 2) {
-                damage = 4;
-                range = 2;
-            } else if(pCurrentPlayer->defense >= 1) {
-                damage = 2;
-                range = 1;
-            }
-            
-            if(damage > 0) {
-                // 對射程內的敵人造成傷害
-                int32_t playerCount = TOTAL_PLAYER;
-                for(int32_t i = 0; i < playerCount; i++) {
-                    if(game.players[i].team != pCurrentPlayer->team) {
-                        int32_t distance = abs(game.players[i].locate[0] - pCurrentPlayer->locate[0]) + 
-                                         abs(game.players[i].locate[1] - pCurrentPlayer->locate[1]);
-                        if(distance <= range) {
-                            game.players[i].life = game.players[i].life > damage ? 
-                                                 game.players[i].life - damage : 0;
-                        }
-                    }
-                }
-            }
+    if (pCurrentPlayer->character == CHARACTER_REDHOOD) { // Little Red Riding Hood
+        int distance = abs(pCurrentPlayer->locate[0] - pOpponentPlayer->locate[0]);
+        for (int i = 0; i < countCard(&pCurrentPlayer->usecards, CARD_REDHOOD_DEF1_ENERGY_SHIELD); i++) {
+            if (distance <= 1) attack(pOpponentPlayer, 1);
+        }
+        for (int i = 0; i < countCard(&pCurrentPlayer->usecards, CARD_REDHOOD_DEF2_CURRENT_SHIELD); i++) {
+            if (distance <= 2) attack(pOpponentPlayer, 2);
+        }
+        for (int i = 0; i < countCard(&pCurrentPlayer->usecards, CARD_REDHOOD_DEF3_ULTIMATE_SHIELD); i++) {
+            if (distance <= 3) attack(pOpponentPlayer, 3);
         }
     }
+    
     
     // 處理白雪公主的至純之毒效果
     if(pCurrentPlayer->character == 1) { // Snow White
@@ -98,15 +77,15 @@ int beginning_phase() {
     return 0;
 }
 
-int refresh_phase(){
-    int32_t card = 0;
-    for(int32_t i = 0; i < 4; i++){
-        while (getVectorTop(&(game.players[i].usecards), &card)){
-            pushbackVector(&(game.players[i].graveyard), card);
-            popbackVector(&(game.players[i].usecards));
-        }
-        game.players[i].defense = 0;
+int refresh_phase(sPlayer* current_player){
+    current_player->defense = 0;
+    int card_id;
+    while (current_player->usecards.SIZE > 0) {
+        getVectorTop(&current_player->usecards, &card_id);
+        pushbackVector(&current_player->graveyard, card_id);
+        popbackVector(&current_player->usecards);
     }
+    printf("Used cards moved to graveyard\n");
     return 0;
 }
 
@@ -125,17 +104,36 @@ int activation_phase(){
     return 0; // 加入返回值
 }
 
-int ending_phase(){
-    int32_t card = 0;
-    for(int32_t i = 0; i < 4 ; i++){
-        game.players[i].energy = 0;
-        while (getVectorTop(&(game.players[i].hand), &card)){
-            pushbackVector(&(game.players[i].graveyard), card);
-            popbackVector(&(game.players[i].hand));
+int ending_phase(sPlayer* current_player){
+    current_player->energy = 0;
+    printf("Energy reset to 0\n");
+
+    int32_t card_id = 0;
+    for (int i = 0; i < current_player->usecards.SIZE; i++) {
+        card_id = current_player->usecards.array[i];
+        const Card* card = getCardData(card_id);
+        if (!card->last_for_turns) {
+            pushbackVector(&current_player->graveyard, card_id);
+            eraseVector(&current_player->usecards, i);
+            i--;
         }
     }
+    printf("Used cards moved to graveyard\n");
     
-    return 0; // 加入返回值
+    while (current_player->hand.SIZE > 0) {
+        getVectorTop(&current_player->hand, &card_id);
+        pushbackVector(&current_player->graveyard, card_id);
+        popbackVector(&current_player->hand);
+    }
+    printf("Hand cards moved to graveyard\n");
+    
+    printf("Draw 6 cards\n");
+    draw_card(current_player, 6);
+
+    game.now_turn_player_id = (game.now_turn_player_id + 1) % 2;
+    printf("Turn ended. Next player's turn.\n");
+
+    return 0;
 }
 
 // action

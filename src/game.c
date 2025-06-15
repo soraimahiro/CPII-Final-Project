@@ -7,6 +7,8 @@
 #include "ui_component.h"
 #include "architecture.h"
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
 // 設置初始牌堆
 void setup_initial_deck(sPlayer* player) {
     clearVector(&player->deck);
@@ -315,6 +317,8 @@ void init_character(sPlayer* p){
             p->redHood.saveCard[0] = -1;
             p->redHood.saveCard[1] = -1;
             p->redHood.saveCard[2] = -1;
+            p->redHood.saveAtk = 0;
+            p->redHood.saveKnock = 0;
             break;
         case CHARACTER_SNOWWHITE:
             p->snowWhite.remindPosion = initVector();
@@ -326,6 +330,7 @@ void init_character(sPlayer* p){
             p->sleepingBeauty.atkRise = 0;
             p->sleepingBeauty.atkRiseTime = 0;
             p->sleepingBeauty.usedmeta1 = 0;
+            p->sleepingBeauty.caused_damage = 0;
             break;
         case CHARACTER_ALICE:
             p->alice.identity = 0;
@@ -424,6 +429,11 @@ void print_hand_cards(sPlayer* player) {
 }
 
 void attack(sPlayer* defender, int total_damage) {
+    if (defender->character == CHARACTER_MULAN) {
+        total_damage -= ki(defender);
+        if (total_damage < 0) total_damage = 0;
+    }
+
     int remaining_damage = 0;
     if (defender->defense > 0) {
         if (defender->defense >= total_damage) {
@@ -437,6 +447,26 @@ void attack(sPlayer* defender, int total_damage) {
     } else {
         defender->life = (defender->life > total_damage) ? 
                         defender->life - total_damage : 0;
+    }
+    // TODO: if (defender->life <= defender->specialGate) 必殺技();
+
+    if (remaining_damage) {
+        if (defender->character == CHARACTER_SLEEPINGBEAUTY) {
+            if (!defender->sleepingBeauty.AWAKEN) {
+                defender->sleepingBeauty.AWAKEN_TOKEN += remaining_damage;
+                if (defender->sleepingBeauty.AWAKEN_TOKEN >= 6) {
+                    defender->sleepingBeauty.AWAKEN_TOKEN = 6;
+                    defender->sleepingBeauty.AWAKEN = 1;
+                }
+            }
+            if (countCard(&defender->usecards, CARD_SLEEPINGBEAUTY_SPECIAL2_DAYMARE)) {
+                int draw_count = min(remaining_damage, 6 - defender->sleepingBeauty.dayNightmareDrawRemind);
+                draw_card(defender, draw_count);
+                defender->sleepingBeauty.dayNightmareDrawRemind = min(defender->sleepingBeauty.dayNightmareDrawRemind + remaining_damage, 6);
+            }
+        }
+            
+        
     }
 }
 
@@ -463,7 +493,7 @@ void move(sPlayer* player, int total_move) {
 }
 
 // Attack action
-void handle_attack(sPlayer* attacker, sPlayer* defender) {
+void handle_attack(sPlayer* attacker, sPlayer* defender, int specific_id) {
     //TODO: 射程 1
     printf("\nAttack Action:\n");
     print_hand_cards(attacker);
@@ -526,7 +556,7 @@ void handle_attack(sPlayer* attacker, sPlayer* defender) {
 }
 
 // Defense action
-void handle_defense(sPlayer* player) {
+void handle_defense(sPlayer* player, int specific_id) {
     printf("\nDefense Action:\n");
     print_hand_cards(player);
     
@@ -587,7 +617,7 @@ void handle_defense(sPlayer* player) {
 }
 
 // Move action
-void handle_move(sPlayer* player) {
+void handle_move(sPlayer* player, int specific_id) {
     printf("\nMove Action:\n");
     print_hand_cards(player);
     
@@ -744,6 +774,42 @@ void handle_skills(sPlayer* attacker, sPlayer* defender) {
 
 }
 
+void handle_ultimate(sPlayer* attacker, sPlayer* defender) {
+    printf("\nUltimate Action:\n");
+    print_hand_cards(attacker);
+    
+    int total_damage = 0;
+    int total_defense = 0;
+    int total_move = 0;
+    int total_energy = 0; //
+    
+    int choice;
+    while (1) {
+        printf("\nChoose an skill card (1-%d) or 0 to stop: ", attacker->hand.SIZE);
+        
+        scanf("%d", &choice);
+        if (choice == 0)  return;
+        else if (choice < 1 || choice > attacker->hand.SIZE) {
+            printf("Invalid choice!\n");
+            continue;
+        }
+        else break; // TODO: check if type is ultimate
+    }
+    // Get the selected card
+    int32_t ultimate_card_id = attacker->hand.array[choice - 1];
+    const Card* ultimate_card = getCardData(ultimate_card_id);
+        
+    //TODO: 檢查是否為必殺牌 
+    if (ultimate_card_id <= 19) {
+        if (handle_redhood_ultimate(attacker, defender, ultimate_card)) {
+            printf("invalid!\n");
+            return;
+        }
+    } 
+    pushbackVector(&attacker->usecards, ultimate_card_id);
+    eraseVector(&attacker->hand, choice - 1);
+}
+
 // 抽牌函數
 void draw_card(sPlayer* player, int count) {
     for (int i = 0; i < count; i++) {
@@ -791,12 +857,14 @@ void game_play_logic() {
     
     // 開始階段
     printf("\n=== Start Phase ===\n");
-     
-    
+    beginning_phase();
+
     // 清理階段
-    refresh_phase(); 
+    printf("\n=== Refresh Phase ===\n");
+    refresh_phase(current_player); 
 
     // 行動階段
+    // TODO: 板載緩存
     bool action_phase_end = false;
     while (!action_phase_end) {
         printf("\n=== Action Phase ===\n");
@@ -808,8 +876,10 @@ void game_play_logic() {
         printf("6. Use Ultimate\n");
         printf("7. Buy Card\n");
         printf("8. End Action Phase\n");
-        printf("9. Exit Game\n");
-        printf("Choose action (1-9): ");
+        printf("9. chara special act\n");
+        printf("-1. Exit Game\n");
+        
+        printf("Choose action (1-10): ");
         
         int choice;
         scanf("%d", &choice);
@@ -822,15 +892,15 @@ void game_play_logic() {
                 break;
                 
             case 2: // Attack
-                handle_attack(current_player, opponent);
+                handle_attack(current_player, opponent, 0);
                 break;
                 
             case 3: // Defense
-                handle_defense(current_player);
+                handle_defense(current_player, 0);
                 break;
                 
             case 4: // Move
-                handle_move(current_player);
+                handle_move(current_player, 0);
                 break;
                 
             case 5: // Use Skill
@@ -840,7 +910,7 @@ void game_play_logic() {
                 
             case 6: // Use Ultimate
                 printf("Use Ultimate: Choose an ultimate card to use\n");
-                // TODO: Implement ultimate usage
+                handle_ultimate(current_player, opponent);
                 break;
                 
             case 7: // Buy Card
@@ -851,8 +921,67 @@ void game_play_logic() {
             case 8: // End Action Phase
                 action_phase_end = true;
                 break;
+            
+            case 9:
+                switch (current_player->character) {
+                    case CHARACTER_REDHOOD: {
+                        int value = countCard(&current_player->metamorphosis, CARD_REDHOOD_METAMORPH4_ONBOARD_CACHE);
+                        if (value) {
+                            printf("板載緩存\n");
+                            int i;
+                            for (i = 1; i <= value; i++) printf("%d. %d", i, current_player->redHood.saveCard[i - 1]);
+                            printf("0. exit");
+                            while (1) {
+                                int choice;
+                                scanf("%d", &choice);
+                                if (!choice) break;
+                                else if (choice <= i) {
+                                    if (current_player->redHood.saveCard[choice - 1]) {
+                                        // 如果已經有存牌，則將牌加入手牌
+                                        int32_t saved_card = current_player->redHood.saveCard[choice - 1];
+                                        pushbackVector(&current_player->hand, saved_card);
+                                        current_player->redHood.saveCard[choice - 1] = -1;  // 清空儲存
+                                        printf("將儲存的牌加入手牌\n");
+                                    }
+                                    else {
+                                        if (current_player->hand.SIZE == 0) {
+                                            printf("沒有手牌可以儲存！\n");
+                                            break;
+                                        }
+                                        
+                                        printf("選擇要儲存的手牌：\n");
+                                        print_hand_cards(current_player);
+                                        
+                                        int card_choice;
+                                        while (1) {
+                                            printf("\n選擇要儲存的牌 (1-%d): ", current_player->hand.SIZE);
+                                            scanf("%d", &card_choice);
+                                            
+                                            if (card_choice < 1 || card_choice > current_player->hand.SIZE) {
+                                                printf("無效的選擇！\n");
+                                                continue;
+                                            }
+                                            break;
+                                        }
+                                        
+                                        // 儲存選擇的牌
+                                        int32_t card_to_save = current_player->hand.array[card_choice - 1];
+                                        current_player->redHood.saveCard[choice - 1] = card_to_save;
+                                        eraseVector(&current_player->hand, card_choice - 1);
+                                        printf("已儲存選擇的牌\n");
+                                    }
+                                }
+                                else continue;
+                            }
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                break;
                 
-            case 9: // Exit Game
+            case -1: // Exit Game
                 change_state(GAME_MENU);
                 return;
         }
@@ -860,34 +989,7 @@ void game_play_logic() {
     
     // 結束階段
     printf("\n=== End Phase ===\n");
-    
-    // 1. 將使用過的牌移到棄牌堆
-    while (current_player->usecards.SIZE > 0) {
-        int32_t card;
-        getVectorTop(&current_player->usecards, &card);
-        pushbackVector(&current_player->graveyard, card);
-        popbackVector(&current_player->usecards);
-    }
-    printf("Used cards moved to graveyard\n");
-    
-    // 2. 將手牌移到棄牌堆
-    while (current_player->hand.SIZE > 0) {
-        int32_t card;
-        getVectorTop(&current_player->hand, &card);
-        pushbackVector(&current_player->graveyard, card);
-        popbackVector(&current_player->hand);
-    }
-    printf("Hand cards moved to graveyard\n");
-    
-    // 3. 重置能量
-    current_player->energy = 0;
-    printf("Energy reset to 0\n");
-    // 4. 抽牌
-    printf("Draw 6 cards\n");
-    draw_card(current_player, 6);
-    // 5. 切換玩家
-    game.now_turn_player_id = (game.now_turn_player_id + 1) % 2;
-    printf("Turn ended. Next player's turn.\n");
+    ending_phase(current_player);
     first_render = true;
     waiting_for_input = true;
 }

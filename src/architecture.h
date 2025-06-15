@@ -40,6 +40,8 @@ typedef struct _sPlayer {
     // Little Red Riding Hood 0
     struct {
         int32_t saveCard[3];
+        int32_t saveAtk;
+        int32_t saveKnock;
     } redHood;
 
     // Snow White 1
@@ -54,7 +56,8 @@ typedef struct _sPlayer {
         int8_t dayNightmareDrawRemind;
         int32_t atkRise;
         int32_t atkRiseTime;
-        int8_t usedmeta1;
+        int8_t usedmeta1; // 放血療法 & 血祭之禮
+        int caused_damage; // 血祭之禮 2 4 6
     } sleepingBeauty;
 
     // alice 3

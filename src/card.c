@@ -232,6 +232,7 @@ int move_card(vector *dest, vector *src) {
     }
 }
 
+
 static const sCharacterInfo character_data[CHARACTER_COUNT] = {
     {CHARACTER_REDHOOD, "小紅帽", "科技射手，擅長遠程攻擊", 30, 6, 15},
     {CHARACTER_SNOWWHITE, "白雪公主", "毒術師，以毒攻敵", 34, 6, 17},

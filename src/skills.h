@@ -11,10 +11,18 @@
 #include "architecture.h"
 
 int handle_redhood_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
+int handle_redhood_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card);
+
 int handle_snowwhite_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
+
 int handle_sleepingbeauty_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
+int handle_sleepingbeauty_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card);
+
 int handle_mulan_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
+int ki(sPlayer* player);
+
 int handle_kaguya_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
+
 int handle_matchgirl_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
 
 void knockback(sPlayer* attacker, sPlayer* defender, int distance);
