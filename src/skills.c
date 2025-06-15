@@ -357,7 +357,9 @@ int handle_mulan_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_
         case CARD_MULAN_ATK2_IRRESISTIBLE:
         case CARD_MULAN_ATK3_UNBREAKABLE: {
             if (distance > 1) return -1;
-            int cost_ki = 0; // TODO: atk_meta1
+            int cost_ki = 0;
+            scanf("%d", cost_ki);
+            attacker->mulan.KI_TOKEN -= cost_ki;
             if (place(attacker, defender)) {
                 // 檢查對手是否有手牌
                 if (defender->hand.SIZE == 0) printf("對手沒有手牌可以棄掉！\n");
@@ -380,6 +382,9 @@ int handle_mulan_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_
         case CARD_MULAN_MOVE3_NO_FORGIVENESS: {
             if (distance > 1) return -1;
             attack(defender, skill_card->level);
+            knockback(attacker, defender, skill_card->level);
+            if (defender->locate[0] == 1 || defender->locate[0] == 9) discard_cards(defender, 1 , true);
+            place(defender, attacker);
 
         }
         default:
