@@ -258,6 +258,9 @@ typedef struct _sGame {
     int32_t nowUsingCardID;
     vector nowShowingCards;
     int32_t totalDamage;
+
+    int set_skill_hand;
+    bool focused;
 } sGame;
 
 #endif

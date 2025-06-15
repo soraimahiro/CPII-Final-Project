@@ -39,6 +39,7 @@ void defend(sPlayer* player, int total_defense);
 void move(sPlayer* player, int total_move);
 void draw_card(sPlayer* player, int count);
 int activation_phase(int32_t handIndex);
+int next_phase();
 
 #endif
 

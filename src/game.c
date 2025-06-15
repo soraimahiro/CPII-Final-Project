@@ -173,6 +173,8 @@ void game_init() {
     // 4. 設置遊戲狀態
     game.now_turn_player_id = 0;  // 玩家1先攻
     game.status = CHOOSE_MOVE;    // 從選擇移動開始
+    game.set_skill_hand = -1;
+    game.focused = false;
 
     // Debug output - print all game.players information
     DEBUG_PRINT("=== GAME INITIALIZATION DEBUG INFO ===\n");
@@ -508,9 +510,6 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int handIndex) {
         printf("range is not enough\n");
         return;
     }
-
-    printf("\nAttack Action:\n");
-    print_hand_cards(attacker);
     
     int total_damage = 0;
     int total_energy = 0;
@@ -606,59 +605,27 @@ void handle_move(sPlayer* player, int handIndex) {
         move(player, total_move);
     }
 }
+void set_skills(int handIndex) {
+    game.set_skill_hand = handIndex;
+}
+void handle_skills(sPlayer* attacker, sPlayer* defender
+, int basicIndex) {
+    int skillIndex = game.set_skill_hand;
 
-void handle_skills(sPlayer* attacker, sPlayer* defender) {
-    printf("\nSkill Action:\n");
-    print_hand_cards(attacker);
-    
     int total_damage = 0;
     int total_defense = 0;
     int total_move = 0;
     int total_energy = 0;
     
-    int choice;
-    while (1) {
-        printf("\nChoose an skill card (1-%d) or 0 to stop: ", attacker->hand.SIZE);
-        
-        scanf("%d", &choice);
-        if (choice == 0)  return;
-        else if (choice < 1 || choice > attacker->hand.SIZE) {
-            printf("Invalid choice!\n");
-            continue;
-        }
-        else break; // TODO: check if type is skill
-    }
-        
-    // Get the selected card
-    int32_t skill_card_id = attacker->hand.array[choice - 1];
+    int32_t skill_card_id = attacker->hand.array[skillIndex];
     const Card* skill_card = getCardData(skill_card_id);
-        
-    //TODO: 檢查是否為技能牌    
-
-
-
-    int32_t basic_card_id = -1;
-    
-    while (1) {
-        printf("\nChoose an basic card (1-%d) or 0 to stop: ", attacker->hand.SIZE);
-        scanf("%d", &choice);
-            
-        if (choice == 0)  return;
-        else if (choice < 1 || choice > attacker->hand.SIZE) {
-            printf("Invalid choice!\n");
-            continue;
-        }
-        else {
-            basic_card_id = attacker->hand.array[choice - 1];
-            const Card* basic_card = getCardData(basic_card_id);
-            if (basic_card->type != TYPE_BASIC && basic_card->type != skill_card->type) {
-                printf("basic_card->type != skill_card->type\n");
-                continue;
-            }
-            else break;
-        }
-    }
+    int32_t basic_card_id = attacker->hand.array[basicIndex];
     const Card* basic_card = getCardData(basic_card_id);
+
+    pushbackVector(&attacker->usecards, skill_card_id);
+    eraseVector(&attacker->hand, skillIndex);
+    pushbackVector(&attacker->usecards, basic_card_id);
+    eraseVector(&attacker->hand, basicIndex);
     
     if (skill_card_id <= 19) {
         if (handle_redhood_skills(attacker, defender, skill_card, basic_card->level)) {
@@ -706,18 +673,9 @@ void handle_skills(sPlayer* attacker, sPlayer* defender) {
             return;
         }
     }
-
-    pushbackVector(&attacker->usecards, skill_card_id);
-    eraseVector(&attacker->hand, choice - 1);
-    pushbackVector(&attacker->usecards, basic_card_id);
-    eraseVector(&attacker->hand, choice - 1);
-
 }
 
-void handle_ultimate(sPlayer* attacker, sPlayer* defender) {
-    printf("\nUltimate Action:\n");
-    print_hand_cards(attacker);
-    
+void handle_ultimate(sPlayer* attacker, sPlayer* defender, int handIndex) {
     int total_damage = 0;
     int total_defense = 0;
     int total_move = 0;
@@ -852,7 +810,7 @@ void game_play_logic() {
                 
             case 5: // Use Skill
                 printf("Use Skill: Choose a skill card to use\n");
-                handle_skills(current_player, opponent);
+                // handle_skills(current_player, opponent);
                 break;
                 
             case 6: // Use Ultimate
@@ -1016,7 +974,26 @@ int activation_phase(int32_t handIndex){
     sPlayer* current_player = &game.players[game.now_turn_player_id];
     sPlayer* opponent = &game.players[(game.now_turn_player_id + 1) % 2];
     int32_t cardID = current_player->hand.array[handIndex];
+    const Card* card = getCardData(cardID);
 
+    if (game.focused) {
+        eraseVector(&current_player->hand, handIndex);
+        game.focused = false;
+        next_phase();
+        return 0;
+    }
+    if (game.set_skill_hand != -1) {
+        int32_t skillCardID = current_player->hand.array[game.set_skill_hand];
+        const Card* skill_card = getCardData(skillCardID);
+        if (card->type == TYPE_BASIC || skill_card->type == card->type) {
+            handle_skills(current_player, opponent, handIndex);
+        }
+        else {
+            set_skills(-1);
+            return 0;
+        }
+    }
+    else set_skills(-1);
     if(cardID >= CARD_BASIC_ATK1 && cardID <= CARD_BASIC_ATK3){
         handle_attack(current_player, opponent, handIndex);
     }
@@ -1032,9 +1009,10 @@ int activation_phase(int32_t handIndex){
         pushbackVector(&current_player->graveyard, cardID);
         eraseVector(&current_player->hand, handIndex);
     }
-    else {
-        handle_skills(current_player, opponent);
+    else if (card->type != TYPE_SPECIAL) { // skill cards
+        set_skills(handIndex);
     }
+    else handle_ultimate(current_player, opponent, handIndex);
     
     return 0; // 加入返回值
 }
@@ -1068,7 +1046,7 @@ void bot_act() {
     }
 } 
 
-int next_phase(){
+int next_phase() {
     ending_phase();
     beginning_phase();
     refresh_phase();
