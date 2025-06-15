@@ -1758,7 +1758,7 @@ void get_active_focus(int32_t *handCard, int32_t *graveCard) {
 
 void draw_deck_popup(const char* title, vector* deck, vector* graveyard) {
     // Semi-transparent overlay
-    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, TRANSPRANCY);
     SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
     SDL_RenderFillRect(uiBase.renderer, &overlay);
     
@@ -2024,7 +2024,7 @@ void draw_battle_ui_stage() {
     // Draw focus mode overlay if active
     if(battleUIStage.focusMode) {
         // Semi-transparent overlay
-        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+        SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, TRANSPRANCY);
         SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         SDL_RenderFillRect(uiBase.renderer, &overlay);
         
@@ -2104,7 +2104,7 @@ void draw_battle_ui_stage() {
 
 void draw_shop_popup() {
     // Semi-transparent overlay
-    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, TRANSPRANCY);
     SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
     SDL_RenderFillRect(uiBase.renderer, &overlay);
     
@@ -2217,7 +2217,7 @@ void draw_shop_popup() {
 // 顯示卡片詳細信息彈窗
 static void draw_card_detail_popup(const Card* cardData) {
     // 创建半透明背景
-    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, TRANSPRANCY);
     SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
     SDL_RenderFillRect(uiBase.renderer, &overlay);
     
@@ -2337,7 +2337,7 @@ static const char* getCardTypeName(CardType type) {
 // 新增：技能牌商店彈窗函數
 void draw_skill_shop_popup(const char* title, int32_t skillType) {
     // 半透明背景
-    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, 128);
+    SDL_SetRenderDrawColor(uiBase.renderer, 0, 0, 0, TRANSPRANCY);
     SDL_Rect overlay = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
     SDL_RenderFillRect(uiBase.renderer, &overlay);
     

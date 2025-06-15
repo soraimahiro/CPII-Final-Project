@@ -14,6 +14,8 @@
 
 #define SELECTABLE_CHARACTER_COUNT 6
 
+#define TRANSPRANCY 200
+
 typedef struct _sUiBase {
     SDL_Window *window;
     SDL_Renderer *renderer;
