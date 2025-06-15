@@ -56,7 +56,7 @@ void draw_text_wrapped(const char* text, int32_t x, int32_t y, SDL_Color color, 
     draw_text(text, x, y, color, font_size);
 }
 
-sButton *create_button(SDL_Rect rect, char *text, 
+sButton *create_button(SDL_Rect rect, const char *text, 
                        SDL_Color *textColor, SDL_Color *bgColor, 
                        SDL_Color *borderColor, int32_t fontSize, int32_t typeNumber) {
     sButton *pButton = calloc(1, sizeof(sButton));

@@ -4,8 +4,17 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "architecture.h"
+#include "../architecture.h"
 #include "ui.h"
+
+// 卡牌區域按鈕管理結構
+typedef struct {
+    sButton **buttons;      // 按鈕陣列
+    int32_t buttonCount;    // 按鈕數量
+    char areaName[32];      // 區域名稱
+    SDL_Rect areaRect;      // 區域矩形
+    bool enabled;           // 是否啟用
+} sCardAreaButtons;
 
 // Battle UI layout constants
 #define LEFT_COLUMN_WIDTH 200
@@ -33,6 +42,13 @@ typedef struct {
     sButton *myMetamorphButton;
     
     sButton *cardButtons[32];   // Hand/skill card buttons
+    sButton *metamorphosisCardButtons[32];   // Metamorphosis card buttons
+    
+    // 卡牌區域按鈕管理
+    sCardAreaButtons handAreaButtons;      // 手牌區域按鈕
+    sCardAreaButtons metamorphosisAreaButtons;      // 反轉牌區域按鈕
+    sCardAreaButtons opponentHandAreaButtons;  // 對手手牌區域按鈕
+    sCardAreaButtons skillAreaButtons;     // 技能區域按鈕
     
     // UI state
     int32_t selectedCard;
@@ -61,6 +77,10 @@ typedef struct {
     bool showMyAttackSkillPopup;
     bool showMyDefenseSkillPopup;
     bool showMyMoveSkillPopup;
+    
+    // 卡片詳細信息彈窗狀態
+    bool showCardDetailPopup;
+    int32_t selectedCardIndex;  // 當前選中的卡片索引
     
     // Hover states
     bool hoveringShop;

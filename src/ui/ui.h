@@ -8,9 +8,9 @@
 #include <SDL2/SDL_ttf.h>
 
 // #include "ui_component.h"
-#include "architecture.h"
-#include "card.h"
-#include "game.h"
+#include "../architecture.h"
+#include "../card.h"
+#include "../game.h"
 #include "ui_component.h"
 
 #define SCREEN_WIDTH 1280
