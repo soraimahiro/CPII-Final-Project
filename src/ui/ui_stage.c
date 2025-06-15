@@ -806,6 +806,19 @@ void draw_player_info_stage(int32_t player_id, int32_t x, int32_t y, bool is_cur
     char energyText[20];
     snprintf(energyText, 20, "能量: %d/25", game.players[player_id].energy);
     draw_text(energyText, x + 5, y + 65, white, 12);
+
+    if(charInfo.character_id == CHARACTER_SLEEPINGBEAUTY){
+        char token[20];
+        snprintf(energyText, 20, "TOKEN: %d/9", game.players[player_id].sleepingBeauty.AWAKEN_TOKEN);
+        draw_text(energyText, x + 95, y + 65, white, 12);
+        snprintf(energyText, 20, "%s", game.players[player_id].sleepingBeauty.AWAKEN ? "覺醒" : "睡眠");
+        draw_text(energyText, x + 95, y + 45, white, 12);
+    }
+    if(charInfo.character_id == CHARACTER_MULAN){
+        char token[20];
+        snprintf(energyText, 20, "TOKEN: %d/12", game.players[player_id].mulan.KI_TOKEN);
+        draw_text(energyText, x + 95, y + 65, white, 12);
+    }
 }
 
 void draw_card_area_stage(const char* title, vector* cards, int32_t x, int32_t y, 

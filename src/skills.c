@@ -358,6 +358,7 @@ int handle_mulan_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_
         case CARD_MULAN_ATK3_UNBREAKABLE: {
             if (distance > 1) return -1;
             int cost_ki = 0;
+            printf("cost ki: ");
             scanf("%d", &cost_ki);
             attacker->mulan.KI_TOKEN -= cost_ki;
             if (place(attacker, defender)) {

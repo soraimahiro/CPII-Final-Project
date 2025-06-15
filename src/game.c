@@ -453,11 +453,13 @@ void attack(sPlayer* defender, int total_damage) {
         }
     } 
     else {
+        remaining_damage = total_damage;
         defender->life = (defender->life > total_damage) ? 
                         defender->life - total_damage : 0;
     }
     // TODO: if (defender->life <= defender->specialGate) 必殺技();
     DEBUG_PRINT("atk2\n");
+    DEBUG_PRINT("%d\n",remaining_damage);
     if (remaining_damage) {
         if (attacker->character == CHARACTER_SLEEPINGBEAUTY) {
             attacker->sleepingBeauty.caused_damage += remaining_damage;
@@ -477,10 +479,30 @@ void attack(sPlayer* defender, int total_damage) {
                 defender->sleepingBeauty.dayNightmareDrawRemind = min(defender->sleepingBeauty.dayNightmareDrawRemind + remaining_damage, 6);
             }
         }
-            
-        
     }
-
+    const char* character_data[CHARACTER_COUNT] = {"小紅帽", "白雪公主", "愛麗絲", "花木蘭", "輝夜姬", "火柴女孩"};
+    if (defender->life <= defender->specialGate) {
+        printf("%s choose 1 ultimate card (1-3): ", character_data[defender->character]);
+        int choice;
+        scanf("%d", &choice);
+        if (choice < 1 || choice > 3) {
+            choice = 1;  // 預設選擇第一張
+        }
+        int ultimate_id;
+        for (int i = 0; i < 3; i++) {
+            if (choice == 3) {
+                getVectorTop(&defender->specialDeck, &ultimate_id);
+                popbackVector(&defender->specialDeck);
+                break;
+            }
+            if (i == choice) getVectorTop(&defender->specialDeck, &ultimate_id);
+            popbackVector(&defender->specialDeck);
+        }
+        pushbackVector(&defender->graveyard, ultimate_id);
+    }
+    if(defender->life <= 0){
+        change_state(GAME_OVER);
+    }
 }
 
 void defend(sPlayer* player, int total_defense) {
@@ -537,6 +559,7 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int handIndex) {
 
     if (attacker->character == CHARACTER_MULAN) {
         int cost_ki = 0;
+        printf("cost ki: ");
         scanf("%d", &cost_ki);
         attacker->mulan.KI_TOKEN -= cost_ki;
         total_damage += cost_ki;
@@ -551,6 +574,7 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int handIndex) {
     if(attacker->character == CHARACTER_SNOWWHITE && attacker->snowWhite.meta1 && total_damage > 2){
         put_posion(attacker, defender, &defender->graveyard);
     }
+    
 }
 
 // Defense action
@@ -691,20 +715,8 @@ void handle_ultimate(sPlayer* attacker, sPlayer* defender, int handIndex) {
     int total_move = 0;
     int total_energy = 0; //
     
-    int choice;
-    while (1) {
-        printf("\nChoose an skill card (1-%d) or 0 to stop: ", attacker->hand.SIZE);
-        
-        scanf("%d", &choice);
-        if (choice == 0)  return;
-        else if (choice < 1 || choice > attacker->hand.SIZE) {
-            printf("Invalid choice!\n");
-            continue;
-        }
-        else break; // TODO: check if type is ultimate
-    }
     // Get the selected card
-    int32_t ultimate_card_id = attacker->hand.array[choice - 1];
+    int32_t ultimate_card_id = attacker->hand.array[handIndex];
     const Card* ultimate_card = getCardData(ultimate_card_id);
         
     //TODO: 檢查是否為必殺牌 
@@ -720,8 +732,20 @@ void handle_ultimate(sPlayer* attacker, sPlayer* defender, int handIndex) {
             return;
         }
     }
+    if (ultimate_card_id <= 46) {
+        if (handle_sleepingbeauty_ultimate(attacker, defender, ultimate_card)) {
+            printf("invalid!\n");
+            return;
+        }
+    }
+    else {
+        if(handle_mulan_ultimate(attacker, defender, ultimate_card)){
+            printf("invalid!\n");
+            return;
+        }
+    }
     pushbackVector(&attacker->usecards, ultimate_card_id);
-    eraseVector(&attacker->hand, choice - 1);
+    eraseVector(&attacker->hand, handIndex);
 }
 
 // 抽牌函數

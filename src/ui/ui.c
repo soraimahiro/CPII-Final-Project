@@ -186,6 +186,7 @@ void change_state(gameState newState) {
             init_battle_ui_stage();
             break;
         case GAME_OVER:
+
         default:
             break;
     }
@@ -743,7 +744,7 @@ void game_over_ui(){
         
         // 重新開始按鈕
         SDL_Rect restartButtonRect = {SCREEN_WIDTH/2 - 120, SCREEN_HEIGHT - 120, 100, 50};
-        menuButtons[0] = create_button(restartButtonRect, "重新開始", textColors, bgColors, borderColors, 20, 2);
+        menuButtons[0] = create_button(restartButtonRect, "離開遊戲", textColors, bgColors, borderColors, 20, 2);
         
         // 回主選單按鈕
         SDL_Rect mainMenuButtonRect = {SCREEN_WIDTH/2 + 20, SCREEN_HEIGHT - 120, 100, 50};
@@ -771,12 +772,7 @@ void game_over_ui(){
         else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
             if (mouse_in_button(menuButtons[0])) { // 重新開始
                 // 重置遊戲統計數據
-                extern time_t game_start_time, game_end_time;
-                game_start_time = 0;
-                game_end_time = 0;
-                total_turns = 0;
-                game_duration_seconds = 0;
-                winner = 0;
+                running = 0;
                 
                 change_state(GAME_INIT_CHARACTER_SELECT);
                 return;
@@ -812,7 +808,7 @@ void game_over_ui(){
     
     for(int32_t i = 0; i < playerCount; i++) {
         sCharacterInfo charInfo = get_character_info(game.players[i].character);
-        if(game.players[i].team == winner) {
+        if(game.players[i].life > 0) {
             snprintf(resultText, 200, "玩家%d %s 勝利！", i+1, charInfo.name);
             draw_text_center(resultText, SCREEN_WIDTH/2, startY, lightblue1, 40);
         } else {
@@ -827,7 +823,7 @@ void game_over_ui(){
     // 遊戲統計資訊 - 一行顯示，時間格式為 HH:MM
     int32_t hours = game_duration_seconds / 3600;
     int32_t minutes = (game_duration_seconds % 3600) / 60;
-    snprintf(resultText, 200, "遊戲時長：%02d:%02d    回合數：%d", hours, minutes, total_turns);
+    snprintf(resultText, 200, "遊戲時長(時:分)：%02d:%02d    回合數：%d", hours, minutes, total_turns);
     draw_text_center(resultText, SCREEN_WIDTH/2, startY, white, 28);
     
     // 繪製按鈕
