@@ -5,6 +5,7 @@
 #include "card_id.h"
 
 #define TOTAL_PLAYER game.playerMode == 0 ? 2 : 4
+#define min(a, b) ((a) < (b) ? (a) : (b))
 
 typedef enum _gameState{
     GAME_MENU = 0,

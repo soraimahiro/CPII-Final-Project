@@ -7,8 +7,6 @@
 #include "ui_component.h"
 #include "architecture.h"
 
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
 // 設置初始牌堆
 void setup_initial_deck(sPlayer* player) {
     clearVector(&player->deck);
@@ -519,13 +517,20 @@ void move(sPlayer* player, int total_move) {
 
 // Attack action
 void handle_attack(sPlayer* attacker, sPlayer* defender, int specific_id) {
-    //TODO: 射程 1
+    if (abs(attacker->locate[0] - defender->locate[0]) > 1) {
+        printf("range is not enough\n");
+        return;
+    }
+
     printf("\nAttack Action:\n");
     print_hand_cards(attacker);
     
     int total_damage = 0;
     int total_energy = 0;
     bool continue_attack = true;
+
+    // TODO
+    int cost_ki = 0;
     
     while (continue_attack) {
         printf("\nChoose an attack card (1-%d) or 0 to stop: ", attacker->hand.SIZE);
@@ -557,14 +562,20 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int specific_id) {
         total_damage += card_value;
         total_energy += card_value;
         
+
+        if (attacker->character == CHARACTER_MULAN) {
+            int cost_ki = 0;
+            scanf("%d", &cost_ki);
+            attacker->mulan.KI_TOKEN -= cost_ki;
+            total_damage += cost_ki;
+        }
+
         // Move card to usecards
         pushbackVector(&attacker->usecards, card_id);
         eraseVector(&attacker->hand, choice - 1);
         
         printf("Added %d damage and energy\n", card_value);
     }
-   
-    // TODO: Hua Mu-Lan
 
     if (total_damage > 0) {
         attack(defender, total_damage);
@@ -653,7 +664,7 @@ void handle_move(sPlayer* player, int specific_id) {
     int total_energy = 0;
     bool continue_move = true;
     
-   //while (continue_move) {
+    while (continue_move) {
         printf("\nChoose a move card (1-%d) or 0 to stop: ", player->hand.SIZE);
         int choice;
         scanf("%d", &choice);
@@ -686,7 +697,15 @@ void handle_move(sPlayer* player, int specific_id) {
         eraseVector(&player->hand, choice - 1);
         
         printf("Added %d move distance and energy\n", card_value);
-    //}
+    }
+
+
+    if (countCard(&player->metamorphosis, CARD_MULAN_METAMORPH3_CHARGE) && player->mulan.KI_TOKEN) {
+        int ki_cost;
+        scanf("%d", &ki_cost);
+        player->mulan.KI_TOKEN -= ki_cost;
+        total_move += ki_cost;
+    }
     
     if (total_move > 0) {
         // Apply movement
@@ -755,8 +774,6 @@ void handle_skills(sPlayer* attacker, sPlayer* defender) {
         }
     }
     const Card* basic_card = getCardData(basic_card_id);
-   
-    // TODO: Hua Mu-Lan
     
     if (skill_card_id <= 19) {
         if (handle_redhood_skills(attacker, defender, skill_card, basic_card->level)) {
@@ -908,7 +925,6 @@ void game_play_logic() {
     refresh_phase(current_player); 
 
     // 行動階段
-    // TODO: 板載緩存
     bool action_phase_end = false;
     while (!action_phase_end) {
         printf("\n=== Action Phase ===\n");

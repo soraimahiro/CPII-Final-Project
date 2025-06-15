@@ -66,13 +66,11 @@ int beginning_phase() {
             if (distance <= 3) attack(pOpponentPlayer, 3);
         }
     }
-    
-    
-    // 處理白雪公主的至純之毒效果
-    if(pCurrentPlayer->character == 1) { // Snow White
-        // 檢查是否有至純之毒蛻變牌，用於處理中毒牌進入棄牌堆的額外傷害
-        // 這個效果在中毒牌實際進入棄牌堆時觸發，這裡只是記錄狀態
-        // 實際的傷害處理會在相關的動作函數中實現
+
+    if(pCurrentPlayer->character == CHARACTER_MULAN) {
+        for (int i = 0; i < countCard(&pCurrentPlayer->usecards, CARD_REDHOOD_DEF2_CURRENT_SHIELD); i++) {
+            pCurrentPlayer->mulan.KI_TOKEN += 1;
+        }
     }
     
     return 0;
@@ -124,6 +122,7 @@ int ending_phase(sPlayer* current_player){
             eraseVector(&current_player->usecards, i);
             i--;
         }
+        else i++; // skip next card
     }
     printf("Used cards moved to graveyard\n");
     
@@ -136,6 +135,15 @@ int ending_phase(sPlayer* current_player){
     
     printf("Draw 6 cards\n");
     draw_card(current_player, 6);
+    if (countCard(&current_player->usecards, CARD_MULAN_SPECIAL1_SOARING)) draw_card(current_player, 4);
+
+    if (current_player->mulan.extraDraw && current_player->mulan.KI_TOKEN) {
+        printf("可以花費X點氣來額外抽取X張牌(max :%d): ", min(current_player->mulan.extraDraw, current_player->mulan.KI_TOKEN));
+        int choice;
+        scanf("%d", &choice);
+        draw_card(current_player, choice);
+        current_player->mulan.extraDraw = 0;
+    }
 
     game.now_turn_player_id = (game.now_turn_player_id + 1) % 2;
     printf("Turn ended. Next player's turn.\n");
