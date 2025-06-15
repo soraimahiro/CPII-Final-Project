@@ -1004,7 +1004,7 @@ void draw_card_area_stage(const char* title, vector* cards, int32_t x, int32_t y
     }
     else {
         // 其他區域保持原來的顯示方式（只顯示前3張）
-        int32_t maxCards = 3; // Show only first 3 cards
+        int32_t maxCards = (y >= 210 && y <= 490) ? cards->SIZE : 3; // 出牌區顯示所有卡片，其他區域只顯示前3張
         if(maxCards > cards->SIZE) maxCards = cards->SIZE;
         
         for(int32_t i = 0; i < maxCards; i++) {
@@ -1014,17 +1014,23 @@ void draw_card_area_stage(const char* title, vector* cards, int32_t x, int32_t y
                 // Display full card name without character limit
                 snprintf(cardText, 150, "%d. %s", i + 1, cardData->name);
                 
+                // Use larger font size only for play area (出牌區)
+                int32_t fontSize = (y >= 210 && y <= 490) ? 18 : 12;  // 出牌區的y範圍是210-490
+                int32_t lineSpacing = (y >= 210 && y <= 490) ? 20 : 15;
+                
                 // Use simple text drawing for now
-                draw_text(cardText, x + 10, cardY + i * 15, white, 12);
+                draw_text(cardText, x + 10, cardY + i * lineSpacing, white, fontSize);
             }
             else {
                 // If card data is missing, show a placeholder
-                draw_text("未知卡牌", x + 10, cardY + i * 15, red, 12);
+                int32_t fontSize = (y >= 210 && y <= 490) ? 18 : 12;
+                int32_t lineSpacing = (y >= 210 && y <= 490) ? 20 : 15;
+                draw_text("未知卡牌", x + 10, cardY + i * lineSpacing, red, fontSize);
             }
         }
         
-        // If more than 3 cards, show "..."
-        if(cards->SIZE > 3) {
+        // If more than 3 cards, show "..." only for non-play areas
+        if(cards->SIZE > 3 && !(y >= 210 && y <= 490)) {
             draw_text("...", x + 10, cardY + 3 * 15, white, 12);
         }
     }

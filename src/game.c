@@ -512,7 +512,7 @@ void defend(sPlayer* player, int total_defense) {
 
 void move(sPlayer* player, int total_move, bool snow) {
     sPlayer *oppoent = &game.players[(game.now_turn_player_id+1)%2];
-    if (!snow) printf("\nChoose direction (-1: left, 1: right): ");
+    if (!snow) printf("\nChoose direction (-1: up, 1: down): ");
     int32_t direction;
     if (!snow) scanf("%d", &direction);
     else direction = 1;
