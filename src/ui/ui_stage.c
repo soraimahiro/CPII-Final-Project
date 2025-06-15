@@ -312,16 +312,24 @@ void draw_middle_column_stage() {
     draw_card_area_stage("反轉牌", &game.players[opponent].metamorphosis, 
                         startX + largeAreaWidth + 30, opponentAreasY, largeAreaWidth, 80, true);
     
-    // Main battle area (center of screen) - enlarged
+    // // Main battle area (center of screen) - enlarged
+    // int32_t battleAreaY = 210; // Start after opponent areas with spacing
+    // int32_t battleAreaHeight = 280; // Enlarged battle area
+    // SDL_Rect battleArea = {startX + 50, battleAreaY, width - 100, battleAreaHeight};
+    // SDL_SetRenderDrawColor(uiBase.renderer, 60, 60, 60, 255);
+    // SDL_RenderFillRect(uiBase.renderer, &battleArea);
+    // SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
+    // SDL_RenderDrawRect(uiBase.renderer, &battleArea);
+    
+    // draw_text_center("主戰鬥區域", startX + width/2, battleAreaY + battleAreaHeight/2, white, 20);
+
+    //  Main battle area (center of screen)
     int32_t battleAreaY = 210; // Start after opponent areas with spacing
     int32_t battleAreaHeight = 280; // Enlarged battle area
     SDL_Rect battleArea = {startX + 50, battleAreaY, width - 100, battleAreaHeight};
-    SDL_SetRenderDrawColor(uiBase.renderer, 60, 60, 60, 255);
-    SDL_RenderFillRect(uiBase.renderer, &battleArea);
-    SDL_SetRenderDrawColor(uiBase.renderer, 255, 255, 255, 255);
-    SDL_RenderDrawRect(uiBase.renderer, &battleArea);
     
-    draw_text_center("主戰鬥區域", startX + width/2, battleAreaY + battleAreaHeight/2, white, 20);
+    draw_card_area_stage("出牌區", &game.players[current_player].usecards, 
+                        startX + 50, battleAreaY, width - 100, battleAreaHeight, true); // Same height as opponent
     
     // My skill areas and used cards - positioned symmetrically to opponent
     int32_t myAreasY = 510; // Position symmetric to opponent areas
