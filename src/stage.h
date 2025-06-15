@@ -20,7 +20,7 @@
 
 #include "architecture.h"
 #include "card_id.h"
-#include "ui_stage.h"
+#include "ui/ui_stage.h"
 
 int beginning_phase();
 int refresh_phase();

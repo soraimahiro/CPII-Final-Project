@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "architecture.h"
+#include "../architecture.h"
 #include "ui.h"
 
 // 卡牌區域按鈕管理結構

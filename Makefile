@@ -1,4 +1,4 @@
-CFILES = src/*.c
+CFILES = src/*.c src/ui/*.c
 OUTPUT = build/main
 
 linux:

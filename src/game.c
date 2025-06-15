@@ -1,9 +1,9 @@
 #include "game.h"
 #include "card.h"
 #include "stage.h"
-#include "ui.h"
-#include "ui_stage.h"
-#include "ui_component.h"
+#include "ui/ui.h"
+#include "ui/ui_stage.h"
+#include "ui/ui_component.h"
 #include "architecture.h"
 
 // 設置初始牌堆

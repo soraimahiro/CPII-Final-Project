@@ -1,5 +1,5 @@
 #include "ui_stage.h"
-#include "card.h"
+#include "../card.h"
 
 extern sGame game;
 extern sUiBase uiBase;

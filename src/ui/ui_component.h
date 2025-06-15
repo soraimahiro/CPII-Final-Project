@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include "architecture.h"
+#include "../architecture.h"
 
 typedef struct _sUiBase {
     SDL_Window *window;
