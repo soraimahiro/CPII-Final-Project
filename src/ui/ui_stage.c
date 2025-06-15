@@ -558,6 +558,13 @@ void init_battle_ui_stage() {
     battleUIStage.hoveringMyAttackSkill = false;
     battleUIStage.hoveringMyDefenseSkill = false;
     battleUIStage.hoveringMyMoveSkill = false;
+    
+    // 初始化移動牌使用狀態
+    battleUIStage.showMoveDirectionPopup = false;
+    battleUIStage.selectedMoveCardIndex = -1;
+    for(int i = 0; i < 2; i++) {
+        battleUIStage.moveDirectionButtons[i] = NULL;
+    }
 }
 
 void draw_right_column_stage() {
@@ -1089,6 +1096,56 @@ void draw_hover_preview(const char* title, vector* cards, int32_t mouseX, int32_
 }
 
 void handle_battle_events_stage(SDL_Event* event) {
+    if (!event) return;
+    
+    // 處理移動方向選擇按鈕點擊
+    if (battleUIStage.showMoveDirectionPopup && event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
+        for (int i = 0; i < 2; i++) {
+            if (battleUIStage.moveDirectionButtons[i] && mouse_in_button(battleUIStage.moveDirectionButtons[i])) {
+                // 根據按鈕索引確定方向
+                const char* directions[] = {"上", "下"};
+                int32_t directionValues[] = {-1, 1};  // 上為-1，下為1
+                DEBUG_PRINT("選擇移動方向: %s (方向值: %d)\n", directions[i], directionValues[i]);
+                
+                // 使用UI版本的移动处理函数
+                sPlayer* current_player = &game.players[game.now_turn_player_id];
+                ui_handle_move(current_player, battleUIStage.selectedMoveCardIndex, directionValues[i]);
+                
+                // 關閉方向選擇彈窗
+                battleUIStage.showMoveDirectionPopup = false;
+                battleUIStage.showCardDetailPopup = false;
+                
+                // 清理方向按鈕
+                for (int j = 0; j < 2; j++) {
+                    if (battleUIStage.moveDirectionButtons[j]) {
+                        free(battleUIStage.moveDirectionButtons[j]);
+                        battleUIStage.moveDirectionButtons[j] = NULL;
+                    }
+                }
+                cleanup_battle_ui_stage();
+                init_battle_ui_stage();
+                return;
+            }
+        }
+    }
+    
+    // 處理使用卡牌按鈕點擊
+    if (battleUIStage.showCardDetailPopup && event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
+        if (mouse_in_button(battleUIStage.useHandButton)) {
+            const Card* cardData = getCardData(game.players[game.now_turn_player_id].hand.array[battleUIStage.selectedCardIndex]);
+            if (cardData && cardData->type == TYPE_MOVE) {
+                // 如果是移動牌，顯示方向選擇彈窗
+                battleUIStage.showMoveDirectionPopup = true;
+                battleUIStage.selectedMoveCardIndex = battleUIStage.selectedCardIndex;
+            } else {
+                // 如果不是移動牌，直接使用
+                printf("使用卡牌: %s\n", cardData->name);
+                battleUIStage.showCardDetailPopup = false;
+            }
+            return;
+        }
+    }
+    
     if (event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
         int32_t mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
@@ -2225,13 +2282,41 @@ static void draw_card_detail_popup(const Card* cardData) {
         draw_text_center(rangeText, SCREEN_WIDTH/2, y, lightblue1, 18);
     }
 
-    int32_t mouseX, mouseY;
-    SDL_GetMouseState(&mouseX, &mouseY);
-    if(mouse_in_button(battleUIStage.useHandButton)){
-        draw_button(battleUIStage.useHandButton, 1);
-    }
-    else{
-        draw_button(battleUIStage.useHandButton, 0);
+    // 如果是移動牌且正在顯示方向選擇彈窗
+    if(cardData->type == TYPE_MOVE && battleUIStage.showMoveDirectionPopup) {
+        // 繪製方向選擇按鈕
+        SDL_Color textColors[] = {white, white};
+        SDL_Color bgColors[] = {gray1, gray2};
+        SDL_Color borderColors[] = {white, white};
+        
+        // 上
+        SDL_Rect upRect = {popupRect.x + popupRect.w/2 - 50, popupRect.y + popupRect.h - 120, 100, 40};
+        battleUIStage.moveDirectionButtons[0] = create_button(upRect, "上", textColors, bgColors, borderColors, 20, 2);
+        
+        // 下
+        SDL_Rect downRect = {popupRect.x + popupRect.w/2 - 50, popupRect.y + popupRect.h - 70, 100, 40};
+        battleUIStage.moveDirectionButtons[1] = create_button(downRect, "下", textColors, bgColors, borderColors, 20, 2);
+        
+        // 繪製方向按鈕
+        for(int i = 0; i < 2; i++) {
+            if(battleUIStage.moveDirectionButtons[i]) {
+                int8_t buttonType = mouse_in_button(battleUIStage.moveDirectionButtons[i]) ? 1 : 0;
+                draw_button(battleUIStage.moveDirectionButtons[i], buttonType);
+            }
+        }
+        
+        // 繪製提示文字
+        draw_text_center("請選擇移動方向", SCREEN_WIDTH/2, popupRect.y + popupRect.h - 150, lightblue1, 18);
+    } else {
+        // 如果不是移動牌或不在顯示方向選擇彈窗，則顯示使用按鈕
+        int32_t mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        if(mouse_in_button(battleUIStage.useHandButton)){
+            draw_button(battleUIStage.useHandButton, 1);
+        }
+        else{
+            draw_button(battleUIStage.useHandButton, 0);
+        }
     }
 }
 
@@ -2355,4 +2440,88 @@ void draw_skill_shop_popup(const char* title, int32_t skillType) {
     SDL_SetRenderDrawColor(uiBase.renderer, 200, 0, 0, 255);
     SDL_RenderFillRect(uiBase.renderer, &closeButtonRect);
     draw_text_center("X", dialogRect.x + dialogRect.w - 25, dialogRect.y + 25, white, 16);
+}
+
+// 辅助函数：检查是否为基本卡牌
+bool ui_is_basic_card(int32_t card_id, int type) {
+    // Basic cards are 1-10
+    // 1-3: Attack
+    // 4-6: Defense
+    // 7-9: Move
+    // 10: Universal
+    if (card_id < 1 || card_id > 10) return false;
+    
+    if (type == TYPE_ATTACK) return card_id >= 1 && card_id <= 3;
+    if (type == TYPE_DEFENSE) return card_id >= 4 && card_id <= 6;
+    if (type == TYPE_MOVE) return card_id >= 7 && card_id <= 9;
+    if (type == TYPE_BASIC) return card_id == 10;
+    
+    return false;
+}
+
+// 辅助函数：放置毒药
+void ui_put_posion(sPlayer* attacker, sPlayer* defender, vector* target) {
+    if (attacker->snowWhite.remindPosion.SIZE > 0) {
+        int32_t poison = attacker->snowWhite.remindPosion.array[0];
+        eraseVector(&attacker->snowWhite.remindPosion, 0);
+        pushbackVector(target, poison);
+    }
+}
+
+// 移动玩家函数
+void ui_move_player(sPlayer* player, int total_move, int32_t direction) {
+    sPlayer *oppoent = &game.players[(game.now_turn_player_id+1)%2];
+    int32_t dest = 0, src = player->locate[0];
+    if (player->locate[0] + total_move*direction == oppoent->locate[0]) {
+        dest = src + (total_move-1)*direction;
+    }
+    else if (player->locate[0] + total_move*direction < 1) dest = 1;
+    else if (player->locate[0] + total_move*direction > 9) dest = 9;
+    else{
+        dest = src + total_move*direction;
+    }
+    player->locate[0] = dest;
+    if(player->character == CHARACTER_SNOWWHITE && player->snowWhite.meta3 &&
+      (dest > oppoent->locate[0] && src < oppoent->locate[0]) ||
+      (dest < oppoent->locate[0] && src > oppoent->locate[0])){
+        ui_put_posion(player, oppoent, &oppoent->graveyard);
+    }
+}
+
+// 处理移动卡牌函数
+void ui_handle_move(sPlayer* player, int handIndex, int32_t direction) {
+    DEBUG_PRINT("\033[31mhandle move\033[0m\n");
+    int total_move = 0;
+    bool continue_move = true;
+        
+    // Get the selected card
+    int32_t card_id = player->hand.array[handIndex];
+    const Card* card = getCardData(card_id);
+    
+    if (!ui_is_basic_card(card_id, TYPE_MOVE) && card_id != 10) {
+        printf("Not a move card!\n");
+        return;
+    }
+    
+    // Calculate move distance and energy
+    total_move += card->level;
+    player->energy += card->level;
+    if (player->energy > 25) player->energy = 25;
+    
+    // Move card to usecards and remove from hand
+    pushbackVector(&player->usecards, card_id);
+    eraseVector(&player->hand, handIndex);
+    DEBUG_PRINT("Card %d moved from hand to usecards\n", card_id);
+
+    if (countCard(&player->metamorphosis, CARD_MULAN_METAMORPH3_CHARGE) && player->mulan.KI_TOKEN) {
+        int ki_cost;
+        scanf("%d", &ki_cost);
+        player->mulan.KI_TOKEN -= ki_cost;
+        total_move += ki_cost;
+    }
+    
+    if (total_move > 0) {
+        // Apply movement
+        ui_move_player(player, total_move, direction);
+    }
 }
