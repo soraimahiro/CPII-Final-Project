@@ -19,6 +19,7 @@ int handle_sleepingbeauty_skills(sPlayer* attacker, sPlayer* defender, const Car
 int handle_sleepingbeauty_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card);
 
 int handle_mulan_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);
+int handle_mulan_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card);
 int ki(sPlayer* player);
 
 int handle_kaguya_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level);

@@ -41,25 +41,67 @@ void knockback(sPlayer* attacker, sPlayer* defender, int distance) {
     defender->locate[0] = new_x;
 }
 
-void discard_cards(sPlayer* player, int value) {
+int place(sPlayer* attacker, sPlayer* defender) {
+    int left = attacker->locate[0] - 1;
+    int right = attacker->locate[0] + 1;
+    
+    printf("選擇要放置的位置：\n");
+    int lf = 0;
+    if (left >= 1 && left != defender->locate[0]) {
+        printf("0. 位置 %d\n", left);
+        lf = 1;
+    }
+    if (right <= 9 && right != defender->locate[0]) {
+        printf("1. 位置 %d\n", right);
+        lf = 1;
+    }
+    if (!lf) {
+        printf("沒有位置\n");
+        return 0;
+    }
+    
+    int choice;
+    printf("\n選擇放置左右(0/1): ");
+    scanf("%d", &choice);
+    
+    if (choice < 1 || choice > 2) {
+        printf("invalid choice!\n");
+    }
+    defender->locate[0] = (choice == 0) ? left : right;
+    if (defender->locate[0] == 1 || defender->locate[0] == 9) return 1;
+    else return 0;
+}
+
+void discard_cards(sPlayer* player, int value, bool is_random) {
     while (value > 0 && player->hand.SIZE > 0) {
-        printf("\n需要棄掉 %d 張牌\n", value);
-        print_hand_cards(player);
-        
-        printf("\n選擇要棄掉的牌 (1-%d): ", player->hand.SIZE);
-        int choice;
-        scanf("%d", &choice);
-        
-        if (choice < 1 || choice > player->hand.SIZE) {
-            printf("無效的選擇！\n");
-            continue;
+        if (is_random) {
+            // Randomly select a card to discard
+            int random_index = rand() % player->hand.SIZE;
+            int32_t card_id = player->hand.array[random_index];
+            const Card* card = getCardData(card_id);
+            printf("\n隨機棄掉 %s\n", card->name);
+            pushbackVector(&player->graveyard, card_id);
+            eraseVector(&player->hand, random_index);
+            value--;
+        } else {
+            printf("\n需要棄掉 %d 張牌\n", value);
+            print_hand_cards(player);
+            
+            printf("\n選擇要棄掉的牌 (1-%d): ", player->hand.SIZE);
+            int choice;
+            scanf("%d", &choice);
+            
+            if (choice < 1 || choice > player->hand.SIZE) {
+                printf("無效的選擇！\n");
+                continue;
+            }
+            
+            // 取得選擇的牌並移到棄牌堆
+            int32_t card_id = player->hand.array[choice - 1];
+            pushbackVector(&player->graveyard, card_id);
+            eraseVector(&player->hand, choice - 1);
+            value--;
         }
-        
-        // 取得選擇的牌並移到棄牌堆
-        int32_t card_id = player->hand.array[choice - 1];
-        pushbackVector(&player->graveyard, card_id);
-        eraseVector(&player->hand, choice - 1);
-        value--;
     }
 }
 
@@ -221,7 +263,7 @@ int handle_redhood_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ul
             if (abs(attacker->locate[0] - defender->locate[0]) > 3) return -1;
             attack(defender, 3);
             knockback(attacker, defender, 3);
-            discard_cards(defender, 3);
+            discard_cards(defender, 3, false);
             return 0;
         default:
             break;
@@ -231,7 +273,16 @@ int handle_redhood_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ul
 
 int handle_sleepingbeauty_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level) {
     int cost_token = 0;
-    // TODO: 是否花費 TOKEN
+    // TODO: 是否花費 TOKEN ,check 是否覺醒， exit覺醒
+    if (attacker->sleepingBeauty.AWAKEN && (skill_card->id <= CARD_SLEEPINGBEAUTY_ATK3_MIND_FURY 
+    || skill_card->id >= CARD_SLEEPINGBEAUTY_MOVE1_DARK_TOUCH)) {
+        printf("cost token(0-%d): ", min(3, attacker->sleepingBeauty.AWAKEN_TOKEN));
+        int choice;
+        scanf("%d", &choice);
+        cost_token = choice;
+        attacker->sleepingBeauty.AWAKEN_TOKEN -= choice;
+        if (attacker->sleepingBeauty.AWAKEN_TOKEN <= 0) attacker->sleepingBeauty.AWAKEN = 0;
+    }
     int distance = abs(attacker->locate[0] - defender->locate[0]);
     switch (skill_card->id) {
         case CARD_SLEEPINGBEAUTY_ATK1_MIND_SHOCK:
@@ -252,6 +303,7 @@ int handle_sleepingbeauty_skills(sPlayer* attacker, sPlayer* defender, const Car
         case CARD_SLEEPINGBEAUTY_DEF3_BURST_SOUL: {
             attacker->sleepingBeauty.atkRise = skill_card->level;
             attacker->sleepingBeauty.atkRiseTime = cost_token + level;
+            if (countCard(&attacker->usecards, CARD_SLEEPINGBEAUTY_METAMORPH3_MENTAL_BARRIER)) defend(attacker, skill_card->level);
             return 0;
         }
         case CARD_SLEEPINGBEAUTY_MOVE1_DARK_TOUCH:
@@ -299,7 +351,61 @@ int handle_sleepingbeauty_ultimate(sPlayer* attacker, sPlayer* defender, const C
 }
 
 int handle_mulan_skills(sPlayer* attacker, sPlayer* defender, const Card* skill_card, uint8_t level) {
-    return 0;
+    int distance = abs(attacker->locate[0] - defender->locate[0]);
+    switch (skill_card->id) {
+        case CARD_MULAN_ATK1_UNDERESTIMATED:
+        case CARD_MULAN_ATK2_IRRESISTIBLE:
+        case CARD_MULAN_ATK3_UNBREAKABLE: {
+            if (distance > 1) return -1;
+            int cost_ki = 0; // TODO: atk_meta1
+            if (place(attacker, defender)) {
+                // 檢查對手是否有手牌
+                if (defender->hand.SIZE == 0) printf("對手沒有手牌可以棄掉！\n");
+                else {
+                    discard_cards(defender, 1, true);  // Randomly discard one card
+                }
+            }
+            attack(defender, skill + level + cost_ki);
+            return 0;
+        }
+        case CARD_MULAN_DEF1_STILLNESS:
+        case CARD_MULAN_DEF2_SOFTNESS:
+        case CARD_MULAN_DEF3_WEAK_OVERCOME_STRONG: {
+            defend(attacker, level);
+            attacker->mulan.extraDraw += skill_card->level;
+            return 0;
+        }
+        case CARD_MULAN_MOVE1_NEVER_RETREAT:
+        case CARD_MULAN_MOVE2_NO_MERCY:
+        case CARD_MULAN_MOVE3_NO_FORGIVENESS: {
+            if (distance > 1) return -1;
+            attack(defender, skill_card->level);
+
+        }
+        default:
+            return -1;
+    }
+}
+// TODO: move move_meta1
+int handle_mulan_ultimate(sPlayer* attacker, sPlayer* defender, const Card* ultimate_card) {
+    int distance = abs(attacker->locate[0] - defender->locate[0]);
+    switch (ultimate_card->id) {
+        case CARD_MULAN_SPECIAL1_SOARING:
+            return 0;
+        case CARD_MULAN_SPECIAL2_FACE_CHAOS:
+            place(defender, attacker);
+            attacker->mulan.KI_TOKEN += 3;
+            if (attacker->mulan.KI_TOKEN > 12) attacker->mulan.KI_TOKEN = 12;
+        case CARD_MULAN_SPECIAL3_THUNDER_STRIKE:
+            if (distance > 1) return -1;
+            else {
+                attack(defender, attacker->mulan.KI_TOKEN);
+                attacker->mulan.KI_TOKEN = 0;
+                return 0;
+            }
+        default:
+            return -1;
+    }
 }
 
 int ki(sPlayer* player) {
@@ -319,9 +425,7 @@ int ki(sPlayer* player) {
         int choice;
         scanf("%d", &choice);
 
-        if (choice == 0) {
-            return 0;
-        }
+        if (choice == 0) return 0;
 
         if (choice < 1 || choice > player->hand.SIZE) {
             printf("無效的選擇！\n");

@@ -7,8 +7,6 @@
 #include "ui_component.h"
 #include "architecture.h"
 
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
 // 設置初始牌堆
 void setup_initial_deck(sPlayer* player) {
     clearVector(&player->deck);
@@ -429,7 +427,7 @@ void print_hand_cards(sPlayer* player) {
 }
 
 void attack(sPlayer* defender, int total_damage) {
-    sPlayer* attacker = game.players[game.now_turn_player_id];
+    sPlayer* attacker = &game.players[game.now_turn_player_id];
     if (attacker->character == CHARACTER_SLEEPINGBEAUTY) {
         if (attacker->sleepingBeauty.atkRiseTime) {
             total_damage += attacker->sleepingBeauty.atkRise;
@@ -488,29 +486,38 @@ void defend(sPlayer* player, int total_defense) {
 void move(sPlayer* player, int total_move) {
     printf("\nChoose direction (-1: left, 1: right): ");
     int direction;
-    while (total_move > 0) {
+    while (1) {
         scanf("%d", &direction);
-        player->locate[0] += direction;
+        player->locate[0] += total_move * direction;
 
         if (total_move == 1 && player->locate[0] == game.players[0].locate[0] && player->locate[0] == game.players[1].locate[0]) {
             printf("不能與對手同一格\n");
-            player->locate[0] -= direction;
+            player->locate[0] -= total_move * direction;
         }
-        else total_move--;
-        if (player->locate[0] < 1) player->locate[0] = 1;
-        else if (player->locate[0] > 9) player->locate[0] = 9;
+        else {
+            if (player->locate[0] < 1) player->locate[0] = 1;
+            else if (player->locate[0] > 9) player->locate[0] = 9;
+            break;
+        }
     }
 }
 
 // Attack action
 void handle_attack(sPlayer* attacker, sPlayer* defender, int specific_id) {
-    //TODO: 射程 1
+    if (abs(attacker->locate[0] - defender->locate[0]) > 1) {
+        printf("range is not enough\n");
+        return;
+    }
+
     printf("\nAttack Action:\n");
     print_hand_cards(attacker);
     
     int total_damage = 0;
     int total_energy = 0;
     bool continue_attack = true;
+
+    // TODO
+    int cost_ki = 0;
     
     while (continue_attack) {
         printf("\nChoose an attack card (1-%d) or 0 to stop: ", attacker->hand.SIZE);
@@ -548,8 +555,6 @@ void handle_attack(sPlayer* attacker, sPlayer* defender, int specific_id) {
         
         printf("Added %d damage and energy\n", card_value);
     }
-   
-    // TODO: Hua Mu-Lan
 
     if (total_damage > 0) {
         attack(defender, total_damage);
@@ -737,8 +742,6 @@ void handle_skills(sPlayer* attacker, sPlayer* defender) {
         }
     }
     const Card* basic_card = getCardData(basic_card_id);
-   
-    // TODO: Hua Mu-Lan
     
     if (skill_card_id <= 19) {
         if (handle_redhood_skills(attacker, defender, skill_card, basic_card->level)) {
@@ -884,7 +887,6 @@ void game_play_logic() {
     refresh_phase(current_player); 
 
     // 行動階段
-    // TODO: 板載緩存
     bool action_phase_end = false;
     while (!action_phase_end) {
         printf("\n=== Action Phase ===\n");
