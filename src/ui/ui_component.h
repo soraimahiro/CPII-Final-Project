@@ -29,7 +29,7 @@ typedef struct {
     int32_t typeNumber;
 } sButton;
 
-sButton *create_button(SDL_Rect rext, char *text, 
+sButton *create_button(SDL_Rect rext, const char *text, 
                        SDL_Color *textColor, SDL_Color *bgColor, 
                        SDL_Color *borderColor, int32_t fontSize, int32_t typeNumber);
 void free_button(sButton *pButton);
